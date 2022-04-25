@@ -1,10 +1,21 @@
-compile: src/main.cpp
-	g++ -o main.exe src/main.cpp src/png-wrapper.cpp -I./src/lib src/lib/bmplib.lib src/lib/png-zlib.lib
+all: demix
 
-run:
-	@echo "[make] running"
-	@./main.exe
+# TODO: remove
+.PHONY: demix
+
+demix: src/demix.cpp
+	@./scripts/check-dependencies.sh
+	g++ -o demix -Wall -I./src/lib src/demix.cpp src/png-wrapper.cpp src/lib/bmplib.lib -lpng -lz
+	@./scripts/rename.sh
+
+# TODO:
+# bmplib:
+# 	@make -C lib/
 
 clean:
 #rm -rf $(OBJDIR)
 	@rm -f *.exe
+	@rm imgs/*-r.png && rm imgs/*-g.png && rm imgs/*-b.png
+
+
+# TODO: -C option of make changes dir to path and runs make there

@@ -1,26 +1,42 @@
+// C++
+#include <iostream>
 #include <memory>
-// TODO: remove aborts, change to real messages
-#include <stdlib.h>
+// C
+#include <cstdlib>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <cstring>
 
 #include "bmp-types.h" // Color, Point, ImageData
 
 #include "png-wrapper.h"
 #include "png.h"
 
-// TODO DEBUG
-// #include <iostream>
+// #if DEBUG_MODE
+#include "timer.h" // TODO: remove
+// #endif
 
 std::unique_ptr<ImageData> read_as_png(const char* const filename)
 {
 	FILE *fp = fopen(filename, "rb");
 
+	// TODO: check how png_create_read_struct is handling errors and handle them accordingly
 	png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png) abort();
+	if (!png) {
+		// abort();
+		std::cerr << "[error] could not create png struct\n";
+	}
 
 	png_infop info = png_create_info_struct(png);
 	
-	if (!info) abort();
-	if (setjmp(png_jmpbuf(png))) abort();
+	if (!info) {
+		// abort();
+		std::cerr << "[error] could not create png info\n";
+	}
+	if (setjmp(png_jmpbuf(png))) {
+		// abort();
+		std::cerr << "[error] could not \"setjmp?\"\n";
+	}
 	png_init_io(png, fp);
 
 	png_read_info(png, info);
@@ -47,13 +63,10 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 
 	// TODO: try to prevent pnglib from reading unnecessary alpha bytes
 	// These color_type don't have an alpha channel then fill it with 0xff.
-	if (color_type == PNG_COLOR_TYPE_RGB ||
-		color_type == PNG_COLOR_TYPE_GRAY ||
-		color_type == PNG_COLOR_TYPE_PALETTE)
+	if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_PALETTE)
 		png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
 
-	if (color_type == PNG_COLOR_TYPE_GRAY ||
-		color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+	if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
 		png_set_gray_to_rgb(png);
 
 	png_read_update_info(png, info);
@@ -66,15 +79,15 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	for (int y = 0; y < height; ++y) {
 		// raw row of color bytes
 		png_read_row(png, rgba_row.get(), NULL);
-		// int r = rgba_row[0]; int g = rgba_row[1]; int b = rgba_row[2];
-		// std::cout << "row " << y << " starts with " << (uint)r << " " << (uint)g << " " << (uint)b << " \n";
+		
 		for (int x = 0; x < width; ++x) {
 			// 4 is bytes_per_px
 			int r = rgba_row[x*4 + 0];
 			int g = rgba_row[x*4 + 1];
 			int b = rgba_row[x*4 + 2];
 			// TODO: handle alpha
-			// int a = argb_row[x*4+3]
+			// int a = rgba_row[x*4+3];
+			// std::cout << a << " ";
 			
 			Color col(r, g, b);
 
@@ -90,13 +103,16 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	return image_data;
 }
 
-void write_as_png(const char* const filename, const ImageData &data)
+void write_as_png(const char* const filename, const ImageData &data, bool alpha)
 {
-	write_as_png(filename, data.colors, data.get_width(), data.get_height());
+	write_as_png(filename, data.colors, data.get_width(), data.get_height(), alpha);
 }
 
+// TODO: test performance against allocating the whole thing and calling write_png_row
+// TODO: test performance with the two cases above but by using int r[] g[] and b[]
+
 // "char const * const filename" also works for "const pointer of const data", lol
-void write_as_png(const char* const filename, Color *colors, uint width, uint height)
+void write_as_png(const char* const filename, Color *colors, uint width, uint height, bool alpha)
 {
 	FILE *fp = fopen(filename, "wb");
 	if(!fp) abort();
@@ -111,40 +127,55 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 
 	png_init_io(png, fp);
 
-	// Output is 8bit depth, RGBA format.
-	png_set_IHDR(
-		png,
-		info,
-		width, height,
-		8,
-		PNG_COLOR_TYPE_RGBA,
-		PNG_INTERLACE_NONE,
-		PNG_COMPRESSION_TYPE_DEFAULT,
-		PNG_FILTER_TYPE_DEFAULT
-	);
-	png_write_info(png, info);
+	if (alpha) {
+		png_set_IHDR( png, info, width, height, 8,
+			PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
+			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT
+		);
 
-	// To remove the alpha channel for PNG_COLOR_TYPE_RGB format,
-	// Use png_set_filler().
-	//   png_set_filler(png, 0, 1);
+		png_write_info(png, info);
 
-	int bytes_per_px = 4;
-	auto rgba_row = std::make_unique<uchar[]>(width * bytes_per_px);
+		int bytes_per_px = 4;
+		auto rgba_row = std::make_unique<uchar[]>(width * bytes_per_px);
+// to here
+		for (uint y = 0; y < height; ++y) {
+			for (uint x = 0; x < width; ++x) {
+				int index = y * width + x;
+				rgba_row[x * bytes_per_px + 0] = colors[index].r;
+				rgba_row[x * bytes_per_px + 1] = colors[index].g;
+				rgba_row[x * bytes_per_px + 2] = colors[index].b;
+				
+				rgba_row[x * bytes_per_px + 3] = (uchar)255;
 
-	for (int y = 0; y < height; ++y) {
-		for (int x = 0; x < width; ++x) {
-			int index = y * width + x;
-			// 4 is bytes_per_px
-			rgba_row[x*4 + 0] = colors[index].r;
-			rgba_row[x*4 + 1] = colors[index].g;
-			rgba_row[x*4 + 2] = colors[index].b;
-			rgba_row[x*4 + 3] = (uchar)255;
-			
-			// TODO: handle alpha
-			//rgba_row[x * 3] = colors[index].a;
+				// TODO: handle alpha
+				//rgba_row[x * 3] = colors[index].a;
+			}
+
+// time from here
+			png_write_row(png, rgba_row.get());
+// to here
 		}
+	} else {
+		png_set_IHDR(png, info, width, height, 8,
+			PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT
+		);
 
-		png_write_row(png, rgba_row.get());
+		png_write_info(png, info);
+
+		int bytes_per_px = 3;
+		auto rgb_row = std::make_unique<uchar[]>(width * bytes_per_px);
+
+		for (uint y = 0; y < height; ++y) {
+			for (uint x = 0; x < width; ++x) {
+				int index = y * width + x;
+				rgb_row[x * bytes_per_px + 0] = colors[index].r;
+				rgb_row[x * bytes_per_px + 1] = colors[index].g;
+				rgb_row[x * bytes_per_px + 2] = colors[index].b;
+			}
+
+			png_write_row(png, rgb_row.get());
+		}
 	}
 
 	png_write_end(png, NULL);

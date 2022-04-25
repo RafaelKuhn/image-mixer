@@ -4,5 +4,5 @@
 
 std::unique_ptr<ImageData> read_as_png(const char* const filename);
 
-void write_as_png(const char* const filename, Color *colors, uint width, uint height);
-void write_as_png(const char* const filename, const ImageData &data);
+void write_as_png(const char* const filename, Color *colors, uint width, uint height, bool alpha);
+void write_as_png(const char* const filename, const ImageData &data, bool alpha);
