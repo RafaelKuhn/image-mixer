@@ -34,7 +34,10 @@
 # vscode shit
 .vscode
 
-# program specific (bmp files)
-*.bmp
-
+####### program specific #######
+# build folders
 obj/
+
+# executables
+demix
+mix
