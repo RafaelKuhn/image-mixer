@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bmp-types.h" // Color, Point, ImageData
+#include "types.h" // Color, Point, ImageData
 
 /**
  * @param alpha defines if output image should have an alpha channel

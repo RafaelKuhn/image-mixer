@@ -3,7 +3,7 @@
  
 #include <string>    // string, stringstream, to_string
 
-#include "bmp-types.h"   // Color, Point, ImageData
+#include "types.h"   // Color, Point, ImageData
 #include "bmp.h"         // read_as_bmp, write_as_bmp
 #include "png-wrapper.h" // read_as_png, write_as_png
 

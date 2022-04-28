@@ -1,7 +1,7 @@
 #include <memory>
 
 #include "turbojpeg.h" // TJSAMPS
-#include "bmp-types.h" // Color, Point, ImageData
+#include "types.h" // Color, Point, ImageData
 
 /** 8 -> 8  */
 #define SUBSAMPLING_444  TJSAMP_444

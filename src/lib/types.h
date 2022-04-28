@@ -1,6 +1,6 @@
-// original location: src/bmp-types.h:
-
 #pragma once
+
+// this is compiled under bmp-lib submodule
 
 typedef unsigned int uint;
 typedef unsigned char uchar;

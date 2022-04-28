@@ -4,7 +4,7 @@
 // C
 #include <cstdlib>
 
-#include "bmp-types.h" // Color, Point, ImageData
+#include "types.h" // Color, Point, ImageData
 
 #include "png-wrapper.h"
 #include "png.h"
