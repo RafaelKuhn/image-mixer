@@ -42,9 +42,7 @@ void write_as_jpeg(const char* const fn, const Color *cl, uint w, uint h, int ql
 	unsigned char* compressed_jpeg_buffer = NULL;
 	int tj_stat = tjCompress2(jpeg_handle, raw_image_buffer, w, 0, h, pixel_format, &compressed_jpeg_buffer, &jpeg_size, ch_ss, ql, 0);
 	if (tj_stat != 0) {
-		const char* err = (const char *)tjGetErrorStr();
-		std::cerr << "TurboJPEG Error: " << err << " UNABLE TO COMPRESS JPEG IMAGE\n";
-		// std::cerr << "TurboJPEG Error: " << tjGetErrorStr() << " UNABLE TO COMPRESS JPEG IMAGE\n";
+		std::cerr << "TurboJPEG Error: " << tjGetErrorStr() << " UNABLE TO COMPRESS JPEG IMAGE\n";
 		tjDestroy(jpeg_handle);
 		return;
 	}
@@ -100,7 +98,7 @@ std::unique_ptr<ImageData> read_as_jpeg(const char* const filename)
 
 	int status = tjDecompress2(_jpegDecompressor, compressed_image_data, file_size, output_buffer, width, 0 /* pitch */, height, TJPF_RGB, TJFLAG_FASTDCT);
 	if (status != 0) {
-		std::cout << "TurboJPEG Error: " << tjGetErrorStr2(_jpegDecompressor) << "\n";
+		std::cerr << "TurboJPEG Error: " << tjGetErrorStr2(_jpegDecompressor) << "\n";
 	}
 #ifdef DEBUG_MODE
 	std::cout << "png w: " << img_data->get_width() << "h: " << img_data->get_height() << "\n";

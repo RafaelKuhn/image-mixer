@@ -15,13 +15,12 @@ to read 8k png  */;
 
 #include <vector>
 
+#include "bmp.h"
 #include "png-wrapper.h"
 #include "jpeg-wrapper.h"
 
 #include "timer.h"
 
-
-using std::cout;
 
 void clone_red(const ImageData& base, ImageData& dest)
 {
@@ -89,6 +88,8 @@ std::vector<std::string> create_str_vect_of_args(int argc, char* argv[])
 
 Settings create_settings_from_args(std::vector<std::string> args)
 {
+	using std::cout;
+
 	if (args.size() == 0) {
 		std::cerr << "[error] no arguments!\n";
 		exit(1);
@@ -173,49 +174,73 @@ Settings create_settings_from_args(std::vector<std::string> args)
 
 int main(int argc, char* argv[])
 {
-	using std::string; using std::make_unique; using std::unique_ptr;
+	using std::cout; using std::string; using std::make_unique; using std::unique_ptr;
 
 	auto arg_vect = create_str_vect_of_args(argc, argv);
 	Settings settings = create_settings_from_args(arg_vect);
 
+#ifdef DEBUG_MODE
 	cout << "[settings]\nalpha : " << (settings.has_alpha == 1 ? "true" : "false") << "\n";
 	cout << "mode  : " << (settings.color_mode == 0 ? "rgb" : "grey") << "\n";
 	cout << "path  : " << settings.image_path.data() << "\n";
+#endif
 
 	string basename = settings.image_path;
 	cout << "[demix] reading path " << basename << "\n";
+#ifdef DEBUG_MODE
+	Timer::get_instance().start_measure();
+#endif
+	unique_ptr<ImageData> original_img = read_as_bmp(basename.data());
+#ifdef DEBUG_MODE
+	Timer::get_instance().print_measure("time reading img: ");
+#endif
 
-				Timer::get_instance().start_measure();
-	unique_ptr<ImageData> original_img = read_as_png(basename.data());
-				Timer::get_instance().print_measure("time reading img: ");
-	
-				Timer::get_instance().start_measure();
+#ifdef DEBUG_MODE
+	Timer::get_instance().start_measure();
+#endif
+
 	auto temp_img = make_unique<ImageData>(original_img->get_width(), original_img->get_height()); // unique_ptr<ImageData> cloned_img(original_img->clone()); // clones it
-				Timer::get_instance().print_measure("time cloning img: ");		
+#ifdef DEBUG_MODE
+	Timer::get_instance().print_measure("time cloning img: ");		
+#endif
 
 	
+	const char* ext = ".bmp";
+
 	cout << "[demix] generating red\n";
-	string r_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-r.jpg");
-				Timer::get_instance().start_measure();
+	string r_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-r.bmp");
+#ifdef DEBUG_MODE
+	Timer::get_instance().start_measure();
+#endif
 	clone_red(*original_img, *temp_img);
-	write_as_jpeg(r_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-				Timer::get_instance().print_measure("time cloning red:   ");
+	write_as_bmp(r_image_path.data(), *temp_img);
+#ifdef DEBUG_MODE
+	Timer::get_instance().print_measure("time cloning red:   ");
+#endif
 	cout << "[demix] red saved at   \"" << r_image_path <<  "\"\n";
 
 
 	cout << "[demix] generating green\n";
-	string g_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-g.jpg");
-				Timer::get_instance().start_measure();
+	string g_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-g.bmp");
+#ifdef DEBUG_MODE
+	Timer::get_instance().start_measure();
+#endif
 	clone_green(*original_img, *temp_img);
-	write_as_jpeg(g_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-				Timer::get_instance().print_measure("time cloning green: ");
-	cout << "[demix] green saved at  \"" << g_image_path <<  "\"\n";
+	write_as_bmp(g_image_path.data(), *temp_img);
+#ifdef DEBUG_MODE
+	Timer::get_instance().print_measure("time cloning green: ");
+#endif
+	cout << "[demix] green saved at \"" << g_image_path <<  "\"\n";
 
 	cout << "[demix] generating blue\n";
-	string b_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-b.jpg");
-				Timer::get_instance().start_measure();
+	string b_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-b.bmp");
+#ifdef DEBUG_MODE
+	Timer::get_instance().start_measure();
+#endif
 	clone_blue(*original_img, *temp_img);
-	write_as_jpeg(b_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-				Timer::get_instance().print_measure("time cloning blue:  ");
-	cout << "[demix] blue saved at \"" << b_image_path <<  "\"\n";
+	write_as_bmp(b_image_path.data(), *temp_img);
+#ifdef DEBUG_MODE
+	Timer::get_instance().print_measure("time cloning blue:  ");
+#endif
+	cout << "[demix] blue saved at  \"" << b_image_path <<  "\"\n";
 }

@@ -10,9 +10,10 @@
 #include "png.h"
 
 // #if DEBUG_MODE
-#include "timer.h" // TODO: remove
+#include "timer.h"
 // #endif
 
+// TODO: better port to c++, using ifstream
 std::unique_ptr<ImageData> read_as_png(const char* const filename)
 {
 	FILE *fp = fopen(filename, "rb");
@@ -87,7 +88,6 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 			int b = rgba_row[x*4 + 2];
 			// TODO: handle alpha
 			// int a = rgba_row[x*4+3];
-			// std::cout << a << " ";
 			
 			Color col(r, g, b);
 
@@ -129,10 +129,9 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 	png_set_compression_level(png, 9); // TODO test from 3 to 9
 
 	if (alpha) {
-		png_set_IHDR( png, info, width, height, 8,
+		png_set_IHDR(png, info, width, height, 8,
 			PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
-			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT
-		);
+			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
 		png_write_info(png, info);
 
