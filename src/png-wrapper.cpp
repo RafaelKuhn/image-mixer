@@ -3,9 +3,6 @@
 #include <memory>
 // C
 #include <cstdlib>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <cstring>
 
 #include "bmp-types.h" // Color, Point, ImageData
 
@@ -25,6 +22,7 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	if (!png) {
 		// abort();
 		std::cerr << "[error] could not create png struct\n";
+		exit(1);
 	}
 
 	png_infop info = png_create_info_struct(png);
@@ -32,10 +30,12 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	if (!info) {
 		// abort();
 		std::cerr << "[error] could not create png info\n";
+		exit(1);
 	}
 	if (setjmp(png_jmpbuf(png))) {
 		// abort();
 		std::cerr << "[error] could not \"setjmp?\"\n";
+		exit(1);
 	}
 	png_init_io(png, fp);
 
@@ -126,6 +126,7 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 	if (setjmp(png_jmpbuf(png))) abort();
 
 	png_init_io(png, fp);
+	png_set_compression_level(png, 9); // TODO test from 3 to 9
 
 	if (alpha) {
 		png_set_IHDR( png, info, width, height, 8,
@@ -137,7 +138,6 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 
 		int bytes_per_px = 4;
 		auto rgba_row = std::make_unique<uchar[]>(width * bytes_per_px);
-// to here
 		for (uint y = 0; y < height; ++y) {
 			for (uint x = 0; x < width; ++x) {
 				int index = y * width + x;
@@ -151,9 +151,7 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 				//rgba_row[x * 3] = colors[index].a;
 			}
 
-// time from here
 			png_write_row(png, rgba_row.get());
-// to here
 		}
 	} else {
 		png_set_IHDR(png, info, width, height, 8,

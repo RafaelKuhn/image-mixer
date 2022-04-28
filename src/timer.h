@@ -1,14 +1,15 @@
 #pragma once
 
-// #include <iostream>
-// #include <ctime>
+#include <iomanip> // setprecision
+#define RND(dec) std::fixed << std::setprecision(3) << dec
 
-class Timera {
-public:
-	static Timera& get_instance();
-
+class Timer {
+private:
 	long start_time {0};
 
-	void start_measure();
+public:
+	static Timer& get_instance();
 
+	void start_measure();
+	void print_measure(const char* message);
 };

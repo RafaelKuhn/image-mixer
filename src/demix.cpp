@@ -1,6 +1,5 @@
 // TODO: make targets
 // TODO: -t opt to measure time
-// TODO: parse jpeg
 // TODO: read image based on it's extension
 
 /* TODO: OPTIMIZE PNG!!!
@@ -9,23 +8,20 @@ real    1m36.803s
 user    1m33.312s
 sys     0m0.530s
 to read 8k png  */;
+
+// TODO: option to demix to yUV (could use png lib)
 #include <iostream>
 #include <memory>
 
-#include "png-wrapper.h"
-
 #include <vector>
 
-#include <chrono>
-#include <iomanip>  // setprecision
+#include "png-wrapper.h"
+#include "jpeg-wrapper.h"
+
+#include "timer.h"
+
 
 using std::cout;
-
-// TODO: move to types, add to types header and segregate types from bmplib
-// ImageData* ImageData::clone() const
-// {
-// 	return new ImageData(*this);
-// }
 
 void clone_red(const ImageData& base, ImageData& dest)
 {
@@ -71,51 +67,6 @@ void clone_blue(const ImageData& base, ImageData& dest)
 		}
 	}
 }
-
-// DEBUG_MODE
-// #include "timer.h" // TODO: implement .h and .cpp timer
-#define RND(dec) std::fixed << std::setprecision(3) << dec
-
-class Timer {
-private:
-	long start_time {0};
-
-public:
-	static Timer& get_instance();
-
-	void start_measure();
-	void print_measure(const char* message);
-};
-
-Timer& Timer::get_instance() {
-	static Timer _instance;
-	return _instance;
-}
-
-void Timer::start_measure() {
-	using std::chrono::duration_cast;
-	using std::chrono::milliseconds;
-	using std::chrono::seconds;
-	using std::chrono::system_clock;
-	using std::cout;
-
-	start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-	// cout << "start time: " << start_time << "\n";
-}
-
-void Timer::print_measure(const char* message) {
-	using std::chrono::duration_cast;
-	using std::chrono::milliseconds;
-	using std::chrono::seconds;
-	using std::chrono::system_clock;
-	using std::cout;
-
-	long end_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-	long elapsed_time = end_time - start_time;
-	// cout << "end time:   " << end_time << "\n";
-	cout << message << elapsed_time << " ms | " << elapsed_time/1000.0 << " s\n";
-}
-// END DEBUG_MODE
 
 enum Mode { RGB, GREY };
 struct Settings {
@@ -244,27 +195,27 @@ int main(int argc, char* argv[])
 
 	
 	cout << "[demix] generating red\n";
-	string r_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-r.png");
+	string r_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-r.jpg");
 				Timer::get_instance().start_measure();
 	clone_red(*original_img, *temp_img);
-	write_as_png(r_image_path.data(), *temp_img, false);
+	write_as_jpeg(r_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
 				Timer::get_instance().print_measure("time cloning red:   ");
 	cout << "[demix] red saved at   \"" << r_image_path <<  "\"\n";
 
 
 	cout << "[demix] generating green\n";
-	string g_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-g.png");
+	string g_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-g.jpg");
 				Timer::get_instance().start_measure();
 	clone_green(*original_img, *temp_img);
-	write_as_png(g_image_path.data(), *temp_img, false);
+	write_as_jpeg(g_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
 				Timer::get_instance().print_measure("time cloning green: ");
 	cout << "[demix] green saved at  \"" << g_image_path <<  "\"\n";
 
 	cout << "[demix] generating blue\n";
-	string b_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-b.png");
+	string b_image_path = string(basename).replace(basename.find(".png"), sizeof(".png"), "-b.jpg");
 				Timer::get_instance().start_measure();
 	clone_blue(*original_img, *temp_img);
-	write_as_png(b_image_path.data(), *temp_img, false);
+	write_as_jpeg(b_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
 				Timer::get_instance().print_measure("time cloning blue:  ");
 	cout << "[demix] blue saved at \"" << b_image_path <<  "\"\n";
 }
