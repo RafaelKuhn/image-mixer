@@ -17,13 +17,8 @@ echo "[shell] checking if dependencies are installed"
 	exit 1
 }
 
-[ -d src/lib/bmp-lib ] || {
+[ "$(ls -A src/lib/bmp-lib)" ] || {
 	printf "[shell] error: bmp-lib submodule not found! try running \n\44 git submodule update --init --recursive\n"
-	exit 1
-}
-
-[ -f src/lib/bmplib.lib ] || {
-	printf "[shell] error: bmplib is not compiled (src/lib/bmplib.lib) try running\n\44 make bmplib\n"
 	exit 1
 }
 

@@ -9,7 +9,7 @@ all: demix
 debug: demix-debug
 
 demix: src/demix.cpp
-# @./scripts/check-dependencies.sh
+	@./scripts/check-dependencies.sh
 # compile bmplib
 	@[ -d src/lib/bmp-lib ] || printf "[make] you must have the bmp-lib submodule at src/lib/bmp-lib folder, try running\n\44 git submodule update --init --recursive\n";
 	make lib -C src/lib/bmp-lib/
