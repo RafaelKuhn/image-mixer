@@ -1,4 +1,4 @@
-<h1 align="center">Image Mixer (not definitive)</h1>
+<h1 align="center">Image Mixer</h1>
 <p align="center">
 C++ terminal application for Windows to mix and demix rgb (+a) color channels
 <h2 align="center"> TODO: COOL IMAGE HERE<h1>
@@ -30,7 +30,7 @@ Segregates an image into three others, comprising of the image's three color cha
 	also creates "img-a.ext", which has the alpha data, the rgb data is filled with white pixels (0xFFFFFF) as most image image viewers display background as black.<br>
 	generated R-G-B images have all alphas filled with "FF" (meaning they're opaque)
 	- last argument without a prefix is always the path to the image to be demixed.<br>
-	examples: `-a "C:/users/anon/landscape.jpg" -m rgb`, `"my-image.png"`
+	examples: `./demix -a "C:/users/anon/landscape.jpg" -m rgb`, `./demix  "my-image.png"`
 ## MIX PROGRAM
 
 Creates an image comprised of three others, taking the red, green, and blue channels of, respectively, the first, second and third image and creating one image comprising the three<br>

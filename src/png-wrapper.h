@@ -8,6 +8,6 @@
  * 32 bpp images use the last 8 bits to store the alpha channel
  */
 void write_as_png(const char* const filename, const ImageData &data, bool alpha);
-void write_as_png(const char* const filename, Color *colors, uint width, uint height, bool alpha);
+void write_as_png(const char* const filename, const Color *colors, uint width, uint height, bool alpha);
 
 std::unique_ptr<ImageData> read_as_png(const char* const filename);

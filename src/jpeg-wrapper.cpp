@@ -64,7 +64,7 @@ std::unique_ptr<ImageData> read_as_jpeg(const char* const filename)
 	std::ifstream file(filename, std::ios_base::binary);
 	if (file.fail()) {
 		std::cerr << "error: file not found!\n";
-		exit(1);
+		return nullptr;
 	}
 	
 	file.seekg(0, file.end);

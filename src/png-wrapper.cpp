@@ -23,7 +23,7 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	if (!png) {
 		// abort();
 		std::cerr << "[error] could not create png struct\n";
-		exit(1);
+		return nullptr;
 	}
 
 	png_infop info = png_create_info_struct(png);
@@ -31,12 +31,12 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 	if (!info) {
 		// abort();
 		std::cerr << "[error] could not create png info\n";
-		exit(1);
+		return nullptr;
 	}
 	if (setjmp(png_jmpbuf(png))) {
 		// abort();
 		std::cerr << "[error] could not \"setjmp?\"\n";
-		exit(1);
+		return nullptr;
 	}
 	png_init_io(png, fp);
 
@@ -112,7 +112,7 @@ void write_as_png(const char* const filename, const ImageData &data, bool alpha)
 // TODO: test performance with the two cases above but by using int r[] g[] and b[]
 
 // "char const * const filename" also works for "const pointer of const data", lol
-void write_as_png(const char* const filename, Color *colors, uint width, uint height, bool alpha)
+void write_as_png(const char* const filename, const Color *colors, uint width, uint height, bool alpha)
 {
 	FILE *fp = fopen(filename, "wb");
 	if(!fp) abort();
@@ -126,7 +126,7 @@ void write_as_png(const char* const filename, Color *colors, uint width, uint he
 	if (setjmp(png_jmpbuf(png))) abort();
 
 	png_init_io(png, fp);
-	png_set_compression_level(png, 9); // TODO test from 3 to 9
+	png_set_compression_level(png, 3); // fastest with decent compression
 
 	if (alpha) {
 		png_set_IHDR(png, info, width, height, 8,
