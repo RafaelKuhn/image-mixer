@@ -20,9 +20,9 @@
  * 80 greatly reduces the size with almost no quality reduction
  * 70 and lower begins to show noticeable differences, but compresses even further
  * default is 100, recommended is 80
- * @param chrominance_subsampling chrominance subsampling, basically how and how much
- * of the chroma component will be cut off the compressed image
- * more details in turbojpeg header file
+ * @param chrominance_subsampling how and how much
+ * of the chroma component will be cut off the compressed image,
+ * more details in turbojpeg header file,
  * default is SUBSAMPLING_444, recommended is SUBSAMPLING_420
  */
 void write_as_jpeg(const char* const filename, const ImageData &data, int jpeg_quality = 100, int chrominance_subsampling = SUBSAMPLING_444);

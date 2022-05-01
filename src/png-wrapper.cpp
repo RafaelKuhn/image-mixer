@@ -1,3 +1,11 @@
+// TODO: get rid of C code
+/* TODO: OPTIMIZE PNG!!!
+took
+real    1m36.803s
+user    1m33.312s
+sys     0m0.530s
+to read 8k png  */;
+
 // C++
 #include <iostream>
 #include <memory>
@@ -9,9 +17,6 @@
 #include "png-wrapper.h"
 #include "png.h"
 
-// #if DEBUG_MODE
-#include "timer.h"
-// #endif
 
 // TODO: better port to c++, using ifstream
 std::unique_ptr<ImageData> read_as_png(const char* const filename)

@@ -1,19 +1,16 @@
 // TODO: make targets
 // TODO: -t opt to measure time
-// TODO: read image based on it's extension
-
-/* TODO: OPTIMIZE PNG!!!
-took
-real    1m36.803s
-user    1m33.312s
-sys     0m0.530s
-to read 8k png  */;
-
 // TODO: option to demix to yUV (could use png lib)
+
 #include <iostream>
 #include <memory>
 
 #include <vector>
+#include <string>
+#include <map>
+#include <algorithm>
+#include <sstream>
+#include <functional>
 
 #include "bmp.h"
 #include "png-wrapper.h"
@@ -21,6 +18,30 @@ to read 8k png  */;
 
 #include "timer.h"
 
+// function that returns a ptr of ImageData from a const char* (path)
+// using ReadImageFunction = std::function<std::unique_ptr<ImageData>>(const char*);
+
+std::vector<std::string> supported_extensions = {
+	"bmp", "png", "jpg", "jpeg"
+};
+enum Mode { RGB, GREY };
+struct Settings {
+	std::string image_path;
+	std::string image_extension;
+	Mode color_mode;
+	bool has_alpha = false;
+};
+
+std::string append_before_extension(const std::string &path, const std::string &ext, const char* appended)
+{
+	size_t replace_start = path.length() - ext.length() - 1;
+	size_t ext_size = sizeof(ext);
+	std::string new_path_ending = std::string(appended).append(".").append(ext);
+	
+	std::string new_path = std::string(path).replace(replace_start, ext_size, new_path_ending);
+
+	return new_path;
+}
 
 void clone_red(const ImageData& base, ImageData& dest)
 {
@@ -29,8 +50,7 @@ void clone_red(const ImageData& base, ImageData& dest)
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			int index = y * width + x;
-			Color col(0, 0, 0);
-			col.r = base.colors[index].r;
+			Color col(base.colors[index].r, 0, 0);
 
 			dest.colors[index] = col;
 		}
@@ -44,8 +64,7 @@ void clone_green(const ImageData& base, ImageData& dest)
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			int index = y * width + x;
-			Color col(0, 0, 0);
-			col.g = base.colors[index].g;
+			Color col(0, base.colors[index].g, 0);
 
 			dest.colors[index] = col;
 		}
@@ -59,62 +78,159 @@ void clone_blue(const ImageData& base, ImageData& dest)
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			int index = y * width + x;
-			Color col(0, 0, 0);
-			col.b = base.colors[index].b;
+			Color col(0, 0, base.colors[index].b);
 
 			dest.colors[index] = col;
 		}
 	}
 }
 
-enum Mode { RGB, GREY };
-struct Settings {
-	bool has_alpha = false;
-	Mode color_mode;
-	std::string image_path;
-};
-
-std::vector<std::string> create_str_vect_of_args(int argc, char* argv[])
-{
-	std::vector<std::string> vect;
-
-	for (int i = 1; i < argc; ++i) {
-		vect.push_back(std::string(argv[i]));
-	}
-
-	return vect;
-}
-
-
-Settings create_settings_from_args(std::vector<std::string> args)
+void demix_png(const Settings &settings)
 {
 	using std::cout;
 
-	if (args.size() == 0) {
-		std::cerr << "[error] no arguments!\n";
+	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
+	auto image_data = read_as_png(settings.image_path.data());
+	
+	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
+
+	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+	clone_red(*image_data, *temp_img);
+	write_as_png(red_image_path.data(), *temp_img, settings.has_alpha);
+	cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+
+	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+	clone_green(*image_data, *temp_img);
+	write_as_png(green_image_path.data(), *temp_img, settings.has_alpha);
+	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+	clone_blue(*image_data, *temp_img);
+	write_as_png(blue_image_path.data(), *temp_img, settings.has_alpha);
+	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+}
+
+void demix_bmp(const Settings &settings)
+{
+	using std::cout;
+
+	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
+	auto image_data = read_as_bmp(settings.image_path.data());
+	
+	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
+
+	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+	clone_red(*image_data, *temp_img);
+	write_as_bmp(red_image_path.data(), *temp_img);
+	cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+
+	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+	clone_green(*image_data, *temp_img);
+	write_as_bmp(green_image_path.data(), *temp_img);
+	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+	clone_blue(*image_data, *temp_img);
+	write_as_bmp(blue_image_path.data(), *temp_img);
+	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+}
+
+void demix_jpeg(const Settings &settings)
+{
+	using std::cout;
+
+	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
+	auto image_data = read_as_jpeg(settings.image_path.data());
+	
+	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
+
+	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+	clone_red(*image_data, *temp_img);
+	write_as_jpeg(red_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+	cout << "[demix] red saved at   \"" << red_image_path <<  "\"\n";
+
+	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+	clone_green(*image_data, *temp_img);
+	write_as_jpeg(green_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+	clone_blue(*image_data, *temp_img);
+	write_as_jpeg(blue_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+}
+
+
+using Demixer = std::function<void(Settings)>;
+std::map<std::string, Demixer> demix_functions_by_extension = {
+	{ "jpg",  demix_jpeg },
+	{ "jpeg", demix_jpeg },
+	{ "png",  demix_png },
+	{ "bmp",  demix_bmp }
+};
+
+
+std::string get_extension(const std::string &path)
+{
+	using std::cout;
+	using std::cerr; using std::stringstream; using std::string;
+
+	size_t index_of_last_dot = path.find_last_of('.');
+	if (index_of_last_dot == string::npos) {
+		cerr << "[error] file at path \"" << path << "\" has no extension\n";
 		exit(1);
 	}
-	// if (args.size() > 4) {
-	// 	std::cerr << "[error] too many arguments!\n";
-	// 	exit(1);
-	// }
 
-	// defaults
+	stringstream ss;
+	int path_len = path.length();
+	for (int i = index_of_last_dot+1; i < path_len; ++i) {
+		ss << path[i];
+	}
+
+	string ext = ss.str();
+
+	auto it = std::find(supported_extensions.begin(), supported_extensions.end(), ext);
+	if (it == supported_extensions.end()) {
+		cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: ";
+		cerr << supported_extensions[0];
+		for (size_t i = 1; i < supported_extensions.size(); ++i) {
+			cerr << ", " << supported_extensions[i];
+		}
+		cerr << "\n";
+		exit(1);
+	}
+
+	return ext;
+}
+
+Settings create_settings_from_args(int argc, char* argv[])
+{
+	using std::cerr;
+
+	// creates a vector of string from argv
+	std::vector<std::string> args;
+	for (int i = 1; i < argc; ++i)
+		args.push_back(std::string(argv[i]));
+
+	if (args.size() == 0) {
+		cerr << "[error] no arguments!\n";
+		exit(1);
+	}
+
 	Settings settings;
+	// defaults
 	settings.has_alpha = false;
 	settings.color_mode = RGB;
-	settings.image_path = "";
 
 	int non_opt_args_amount = 0;
-
-	for (auto arg_ptr = args.begin(); arg_ptr != args.end(); arg_ptr++) {
-		std::string current = *arg_ptr; // cout << "------->: " << current << "\n";
+	for (auto arg_ptr = args.begin(); arg_ptr != args.end(); ++arg_ptr) {
+		std::string current = *arg_ptr;
 
 		bool is_arg_not_an_opt = current[0] != '-';
 		if (is_arg_not_an_opt) {
 			if (non_opt_args_amount > 0) {
-				std::cerr << "[error] multiple paths informed!\n";
-				cout << "can't decide between \"" << settings.image_path << "\" and \"" << current << "!\n";
+				cerr << "[error] multiple paths informed!\n";
+				cerr << "can't decide between \"" << settings.image_path << "\" and \"" << current << "!\n";
 				exit(1);
 			}
 			non_opt_args_amount++;
@@ -123,8 +239,8 @@ Settings create_settings_from_args(std::vector<std::string> args)
 		}
 
 		if (current.size() > 2) {
-			std::cerr << "[error] opt argument not found: " << current;
-			cout << "opt arguments are -a and -m!\n";
+			cerr << "[error] opt argument too long!: " << current;
+			cerr << "opt arguments have just one character, like -a or -m!\n";
 			exit(1);
 		}
 
@@ -140,12 +256,13 @@ Settings create_settings_from_args(std::vector<std::string> args)
 		if (opt_char == 'm') {
 			// check if -m is the last argument
 			if (current == args.back()) {
-				std::cerr << "[error] mode not found!\n";
-				cout << "modes are \"rgb\" and \"grey\"\n";
+				cerr << "[error] mode not specified!\n";
+				cerr << "try \"-m rgb\" or \"-m grey\" \n";
 				exit(1);
 			}
 
 			std::string mode = *(++arg_ptr);
+			// TODO: get mode from string
 			if (mode == std::string("grey") || mode == std::string("gray")) {
 				settings.color_mode = GREY;
 
@@ -153,94 +270,40 @@ Settings create_settings_from_args(std::vector<std::string> args)
 				settings.color_mode = RGB;
 
 			} else {
-				std::cerr << "[error] mode not found: " << mode;
-				cout << "\nmodes are \"rgb\" and \"grey\"\n";
+				cerr << "[error] specified mode not found: " << mode;
+				cerr << "\nmodes are \"rgb\" and \"grey\"\n";
 				exit(1);
 			}
 			continue;
 		}
 
-		std::cerr << "[error] optional argument \"" << current << "\" not found!\n";
+		cerr << "[error] optional argument \"" << current << "\" not found!\n";
 		exit(1);
 	}
 
 	if (non_opt_args_amount == 0) {
-		std::cerr << "[error] you must specify path to the image!\n";
+		cerr << "[error] you must specify path to the image!\n";
 		exit(1);
 	}
+
+	settings.image_extension = get_extension(settings.image_path);
 
 	return settings;
 }
 
+void run_program(int argc, char* argv[])
+{
+}
+
 int main(int argc, char* argv[])
 {
-	using std::cout; using std::string; using std::make_unique; using std::unique_ptr;
+	// #ifdef DEBUG_MODE
+	// run_debug_program(argc, argv);
+	// #endif
 
-	auto arg_vect = create_str_vect_of_args(argc, argv);
-	Settings settings = create_settings_from_args(arg_vect);
+	Settings settings = create_settings_from_args(argc, argv);
 
-#ifdef DEBUG_MODE
-	cout << "[settings]\nalpha : " << (settings.has_alpha == 1 ? "true" : "false") << "\n";
-	cout << "mode  : " << (settings.color_mode == 0 ? "rgb" : "grey") << "\n";
-	cout << "path  : " << settings.image_path.data() << "\n";
-#endif
+	auto demix_function = demix_functions_by_extension.at(settings.image_extension);
 
-	string basename = settings.image_path;
-	cout << "[demix] reading path " << basename << "\n";
-#ifdef DEBUG_MODE
-	Timer::get_instance().start_measure();
-#endif
-	unique_ptr<ImageData> original_img = read_as_bmp(basename.data());
-#ifdef DEBUG_MODE
-	Timer::get_instance().print_measure("time reading img: ");
-#endif
-
-#ifdef DEBUG_MODE
-	Timer::get_instance().start_measure();
-#endif
-
-	auto temp_img = make_unique<ImageData>(original_img->get_width(), original_img->get_height()); // unique_ptr<ImageData> cloned_img(original_img->clone()); // clones it
-#ifdef DEBUG_MODE
-	Timer::get_instance().print_measure("time cloning img: ");		
-#endif
-
-	
-	const char* ext = ".bmp";
-
-	cout << "[demix] generating red\n";
-	string r_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-r.bmp");
-#ifdef DEBUG_MODE
-	Timer::get_instance().start_measure();
-#endif
-	clone_red(*original_img, *temp_img);
-	write_as_bmp(r_image_path.data(), *temp_img);
-#ifdef DEBUG_MODE
-	Timer::get_instance().print_measure("time cloning red:   ");
-#endif
-	cout << "[demix] red saved at   \"" << r_image_path <<  "\"\n";
-
-
-	cout << "[demix] generating green\n";
-	string g_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-g.bmp");
-#ifdef DEBUG_MODE
-	Timer::get_instance().start_measure();
-#endif
-	clone_green(*original_img, *temp_img);
-	write_as_bmp(g_image_path.data(), *temp_img);
-#ifdef DEBUG_MODE
-	Timer::get_instance().print_measure("time cloning green: ");
-#endif
-	cout << "[demix] green saved at \"" << g_image_path <<  "\"\n";
-
-	cout << "[demix] generating blue\n";
-	string b_image_path = string(basename).replace(basename.find(ext), sizeof(ext), "-b.bmp");
-#ifdef DEBUG_MODE
-	Timer::get_instance().start_measure();
-#endif
-	clone_blue(*original_img, *temp_img);
-	write_as_bmp(b_image_path.data(), *temp_img);
-#ifdef DEBUG_MODE
-	Timer::get_instance().print_measure("time cloning blue:  ");
-#endif
-	cout << "[demix] blue saved at  \"" << b_image_path <<  "\"\n";
+	demix_function(settings);
 }
