@@ -1,19 +1,19 @@
 #!/bin/bash
 
-echo "[shell] checking if dependencies are installed"
+printf "[shell] checking if dependencies are installed\n"
 
 [ "$(gcc -lturbojpeg 2>&1 | grep "cannot find")" ] && {
-	echo "[shell] error: cannot find libturbojpeg (gcc -lturbojpeg)"
+	printf "[shell] error: cannot find libturbojpeg (gcc -lturbojpeg)\n"
 	exit 1
 }
 
 [ "$(gcc -lpng 2>&1 | grep "cannot find")" ] && {
-	echo "[shell] error: cannot find libpng (gcc -lpng)"
+	printf "[shell] error: cannot find libpng (gcc -lpng)\n"
 	exit 1
 }
 
 [ "$(gcc -lz 2>&1 | grep "cannot find")" ] && {
-	echo "[shell] error: cannot find zlib (gcc -lz)"
+	printf "[shell] error: cannot find zlib (gcc -lz)\n"
 	exit 1
 }
 
@@ -22,4 +22,5 @@ echo "[shell] checking if dependencies are installed"
 	exit 1
 }
 
-echo "[shell] all dependencies are installed!"
+printf "[shell] all dependencies are installed!\n"
+printf "\-lturbojpeg \-lpng \-lz" > scripts/DEPS_OK.tmp

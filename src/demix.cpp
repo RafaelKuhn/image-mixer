@@ -263,10 +263,10 @@ Settings create_settings_from_args(int argc, char* argv[])
 
 			std::string mode = *(++arg_ptr);
 			// TODO: get mode from string
-			if (mode == std::string("grey") || mode == std::string("gray")) {
+			if (mode == "grey" || mode == "gray") {
 				settings.color_mode = GREY;
 
-			} else if (mode == std::string("rgb")) {
+			} else if (mode == "rgb") {
 				settings.color_mode = RGB;
 
 			} else {
@@ -289,10 +289,6 @@ Settings create_settings_from_args(int argc, char* argv[])
 	settings.image_extension = get_extension(settings.image_path);
 
 	return settings;
-}
-
-void run_program(int argc, char* argv[])
-{
 }
 
 int main(int argc, char* argv[])

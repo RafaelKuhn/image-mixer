@@ -35,8 +35,11 @@
 .vscode
 
 ####### program specific #######
-# build folders
+# object build folders
 obj/
+
+# temporary files
+*.tmp
 
 # executables
 demix
