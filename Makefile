@@ -1,4 +1,6 @@
 # TODO: raw test this in actual linux distro
+
+# TODO: commit "change libz to libzstd, scripts/DEPS_OK.tmp as a variable and passed as arg to the script
 CC := g++
 
 SRC_DIR := src/core
@@ -6,36 +8,38 @@ LIB_DIR := src/lib
 OBJ_DIR := obj
 INC_DIR := include
 
-CPP_FLAGS =  -Wall
+CPP_FLAGS = -Wall
 DEBUG_FLAGS = -Wall -Wextra -pedantic -D DEBUG_MODE
 
 CORE_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.r.o, $(CORE_FILES))
+DEBUG_OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.d.o, $(CORE_FILES))
 
-LIBS := -lturbojpeg -lpng -lz
+LIBS := -lturbojpeg -lpng -lzstd
 
 BMPLIB_PATH = $(LIB_DIR)/bmp-lib
 BMPLIB = $(LIB_DIR)/bmplib.lib
-
-
-DEBUG_OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.d.o, $(CORE_FILES))
 BMPLIB_DEBUG = $(LIB_DIR)/bmplib_debug.lib
 
+DEPS_OK_FILE = scripts/DEPS_OK.tmp
 
+
+# creates obj dir, since git doesn't track files and file names, but contents
 $(shell [ -d $(OBJ_DIR) ] || mkdir $(OBJ_DIR) )
 
 all: demix
 debug: demix-debug
 
 # compile demix program
-demix: $(OBJS) $(BMPLIB) check-deps
+demix: $(DEPS_OK_FILE) $(OBJS) $(BMPLIB) src/demix.cpp
 	$(CC) -o demix.exe $(CPP_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/demix.cpp $(OBJS) $(BMPLIB) $(LIBS)
 	@./scripts/rename-exe-windows.sh
-demix-debug: $(DEBUG_OBJS) $(BMPLIB_DEBUG) check-deps
+demix-debug: $(DEPS_OK_FILE) $(DEBUG_OBJS) $(BMPLIB_DEBUG) src/demix.cpp
 	$(CC) -o demix.exe $(DEBUG_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/demix.cpp $(DEBUG_OBJS) $(BMPLIB_DEBUG) $(LIBS)
 	@./scripts/rename-exe-windows.sh
 
 
+# compile included library bmplib
 $(BMPLIB):
 	make lib -C $(BMPLIB_PATH)
 	cp $(BMPLIB_PATH)/lib/*.lib $(LIB_DIR)
@@ -54,11 +58,9 @@ $(OBJ_DIR)/%.d.o: $(SRC_DIR)/%.cpp
 	$(CC) $(DEBUG_FLAGS) -I$(INC_DIR) -c $< -o $@
 
 
-# hack to run dependency checking script only once
-check-deps: scripts/DEPS_OK.tmp
-	@:
-scripts/DEPS_OK.tmp: scripts/check-dependencies.sh
-	@./scripts/check-dependencies.sh 
+# hack to run dependency checking script until it creates the file $(DEPS_OK_FILE)
+$(DEPS_OK_FILE): scripts/check-dependencies.sh
+	@./scripts/check-dependencies.sh $(DEPS_OK_FILE)
 
 
 clean:

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 printf "[shell] checking if dependencies are installed\n"
 
@@ -12,8 +12,8 @@ printf "[shell] checking if dependencies are installed\n"
 	exit 1
 }
 
-[ "$(gcc -lz 2>&1 | grep "cannot find")" ] && {
-	printf "[shell] error: cannot find zlib (gcc -lz)\n"
+[ "$(gcc -lzstd 2>&1 | grep "cannot find")" ] && {
+	printf "[shell] error: cannot find zlib (gcc -lzstd)\n"
 	exit 1
 }
 
@@ -23,4 +23,6 @@ printf "[shell] checking if dependencies are installed\n"
 }
 
 printf "[shell] all dependencies are installed!\n"
-printf "\-lturbojpeg \-lpng \-lz" > scripts/DEPS_OK.tmp
+[ "$1" = "" ] || {
+	printf "\-lturbojpeg \-lpng \-lzstd" > "$1"
+}
