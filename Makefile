@@ -1,6 +1,4 @@
 # TODO: raw test this in actual linux distro
-
-# TODO: commit "change libz to libzstd, scripts/DEPS_OK.tmp as a variable and passed as arg to the script
 CC := g++
 
 SRC_DIR := src/core

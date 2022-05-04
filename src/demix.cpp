@@ -18,12 +18,6 @@
 
 #include "timer.h"
 
-// function that returns a ptr of ImageData from a const char* (path)
-// using ReadImageFunction = std::function<std::unique_ptr<ImageData>>(const char*);
-
-std::vector<std::string> supported_extensions = {
-	"bmp", "png", "jpg", "jpeg"
-};
 enum Mode { RGB, GREY };
 struct Settings {
 	std::string image_path;
@@ -56,7 +50,6 @@ void clone_red(const ImageData& base, ImageData& dest)
 		}
 	}
 }
-
 void clone_green(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
@@ -70,7 +63,6 @@ void clone_green(const ImageData& base, ImageData& dest)
 		}
 	}
 }
-
 void clone_blue(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
@@ -85,12 +77,14 @@ void clone_blue(const ImageData& base, ImageData& dest)
 	}
 }
 
+
 void demix_png(const Settings &settings)
 {
 	using std::cout;
 
 	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
 	auto image_data = read_as_png(settings.image_path.data());
+	if (!image_data) { exit(1); }
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
@@ -114,8 +108,9 @@ void demix_bmp(const Settings &settings)
 {
 	using std::cout;
 
-	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
+	std::cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
 	auto image_data = read_as_bmp(settings.image_path.data());
+	if (!image_data) { exit(1); }
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
@@ -141,6 +136,7 @@ void demix_jpeg(const Settings &settings)
 
 	cout << "[demix] reading file as \"" << settings.image_path << "\" as " << settings.image_extension << "\n";
 	auto image_data = read_as_jpeg(settings.image_path.data());
+	if (!image_data) { exit(1); }
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
@@ -161,8 +157,7 @@ void demix_jpeg(const Settings &settings)
 }
 
 
-using Demixer = std::function<void(Settings)>;
-std::map<std::string, Demixer> demix_functions_by_extension = {
+std::map<std::string, std::function<void(Settings)>> demix_functions_by_extension = {
 	{ "jpg",  demix_jpeg },
 	{ "jpeg", demix_jpeg },
 	{ "png",  demix_png },
@@ -188,13 +183,12 @@ std::string get_extension(const std::string &path)
 	}
 
 	string ext = ss.str();
-
-	auto it = std::find(supported_extensions.begin(), supported_extensions.end(), ext);
-	if (it == supported_extensions.end()) {
+	
+	bool is_extension_invalid = demix_functions_by_extension.find(ext) == demix_functions_by_extension.end();
+	if (is_extension_invalid) {
 		cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: ";
-		cerr << supported_extensions[0];
-		for (size_t i = 1; i < supported_extensions.size(); ++i) {
-			cerr << ", " << supported_extensions[i];
+		for (auto const& [key, val] : demix_functions_by_extension) {
+			cerr << key << " ";
 		}
 		cerr << "\n";
 		exit(1);
@@ -262,7 +256,6 @@ Settings create_settings_from_args(int argc, char* argv[])
 			}
 
 			std::string mode = *(++arg_ptr);
-			// TODO: get mode from string
 			if (mode == "grey" || mode == "gray") {
 				settings.color_mode = GREY;
 
@@ -293,10 +286,6 @@ Settings create_settings_from_args(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	// #ifdef DEBUG_MODE
-	// run_debug_program(argc, argv);
-	// #endif
-
 	Settings settings = create_settings_from_args(argc, argv);
 
 	auto demix_function = demix_functions_by_extension.at(settings.image_extension);

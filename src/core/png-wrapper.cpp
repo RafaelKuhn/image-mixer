@@ -21,6 +21,11 @@ std::unique_ptr<ImageData> read_as_png(const char* const filename)
 {
 	FILE *fp = fopen(filename, "rb");
 
+	if (fp == NULL) {
+		std::cerr << "[error] file not found\n";
+		return nullptr;
+	}
+
 	// TODO: check how png_create_read_struct is handling errors and handle them accordingly
 	png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png) {
