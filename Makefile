@@ -9,6 +9,8 @@ INC_DIR := include
 CPP_FLAGS = -Wall
 DEBUG_FLAGS = -Wall -Wextra -pedantic -D DEBUG_MODE
 
+# TODO: wildcard "core main files"
+
 CORE_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.r.o, $(CORE_FILES))
 DEBUG_OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.d.o, $(CORE_FILES))
@@ -25,16 +27,33 @@ DEPS_OK_FILE = scripts/DEPS_OK.tmp
 # creates obj dir, since git doesn't track files and file names, but contents
 $(shell [ -d $(OBJ_DIR) ] || mkdir $(OBJ_DIR) )
 
-all: demix
-debug: demix-debug
+all: demix mix encode
+debug: demix-debug mix-debug encode-debug
+
 
 # compile demix program
 demix: $(DEPS_OK_FILE) $(OBJS) $(BMPLIB) src/demix.cpp
 	$(CC) -o demix.exe $(CPP_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/demix.cpp $(OBJS) $(BMPLIB) $(LIBS)
-	@./scripts/rename-exe-windows.sh
+	@./scripts/rename-exe-windows.sh demix
 demix-debug: $(DEPS_OK_FILE) $(DEBUG_OBJS) $(BMPLIB_DEBUG) src/demix.cpp
 	$(CC) -o demix.exe $(DEBUG_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/demix.cpp $(DEBUG_OBJS) $(BMPLIB_DEBUG) $(LIBS)
-	@./scripts/rename-exe-windows.sh
+	@./scripts/rename-exe-windows.sh demix
+
+# compile mix program
+mix: $(DEPS_OK_FILE) $(OBJS) $(BMPLIB) src/mix.cpp
+	$(CC) -o mix.exe $(CPP_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/mix.cpp $(OBJS) $(BMPLIB) $(LIBS)
+	@./scripts/rename-exe-windows.sh mix
+mix-debug: $(DEPS_OK_FILE) $(DEBUG_OBJS) $(BMPLIB_DEBUG) src/mix.cpp
+	$(CC) -o mix.exe $(DEBUG_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/mix.cpp $(DEBUG_OBJS) $(BMPLIB_DEBUG) $(LIBS)
+	@./scripts/rename-exe-windows.sh mix
+
+# compile encode program
+encode: $(DEPS_OK_FILE) $(OBJS) $(BMPLIB) src/encode.cpp
+	$(CC) -o encode.exe $(CPP_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/encode.cpp $(OBJS) $(BMPLIB) $(LIBS)
+	@./scripts/rename-exe-windows.sh encode
+encode-debug: $(DEPS_OK_FILE) $(DEBUG_OBJS) $(BMPLIB_DEBUG) src/encode.cpp
+	$(CC) -o encode.exe $(DEBUG_FLAGS) -I$(SRC_DIR) -I$(INC_DIR) src/encode.cpp $(DEBUG_OBJS) $(BMPLIB_DEBUG) $(LIBS)
+	@./scripts/rename-exe-windows.sh encode
 
 
 # compile included library bmplib
