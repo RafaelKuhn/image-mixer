@@ -18,13 +18,6 @@
 
 #include "timer.h"
 
-enum Mode { RGB, GREY };
-struct Settings {
-	std::string image_path;
-	std::string image_extension;
-	Mode color_mode;
-	bool has_alpha = false;
-};
 
 std::string append_before_extension(const std::string &path, const std::string &ext, const char* appended)
 {
@@ -35,6 +28,28 @@ std::string append_before_extension(const std::string &path, const std::string &
 	std::string new_path = std::string(path).replace(replace_start, ext_size, new_path_ending);
 
 	return new_path;
+}
+
+std::string get_extension(const std::string &path)
+{
+	using std::cout;
+	using std::cerr; using std::stringstream; using std::string;
+
+	size_t index_of_last_dot = path.find_last_of('.');
+	if (index_of_last_dot == string::npos) {
+		cerr << "[error] file at path \"" << path << "\" has no extension\n";
+		exit(1);
+	}
+
+	stringstream ss;
+	int path_len = path.length();
+	for (int i = index_of_last_dot+1; i < path_len; ++i) {
+		ss << path[i];
+	}
+
+	string ext = ss.str();
+
+	return ext;
 }
 
 void clone_only_red(const ImageData& base, ImageData& dest)
@@ -119,6 +134,14 @@ void distribute_blue(const ImageData& base, ImageData& dest)
 		}
 	}
 }
+
+enum Mode { RGB, GREY };
+struct Settings {
+	std::string image_path;
+	std::string image_extension;
+	Mode color_mode;
+	bool has_alpha = false;
+};
 
 // TODO: demix function could take 'read function' and 'write function'
 // or polymorphism: class receives a 'read method' and 'write method'
@@ -258,36 +281,17 @@ std::map<std::string, std::function<void(Settings)>> demix_functions_by_extensio
 	{ "bmp",  demix_bmp }
 };
 
-std::string get_extension(const std::string &path)
+void exit_if_invalid_extension(const std::string &ext)
 {
-	using std::cout;
-	using std::cerr; using std::stringstream; using std::string;
-
-	size_t index_of_last_dot = path.find_last_of('.');
-	if (index_of_last_dot == string::npos) {
-		cerr << "[error] file at path \"" << path << "\" has no extension\n";
-		exit(1);
-	}
-
-	stringstream ss;
-	int path_len = path.length();
-	for (int i = index_of_last_dot+1; i < path_len; ++i) {
-		ss << path[i];
-	}
-
-	string ext = ss.str();
-	
 	bool is_extension_invalid = demix_functions_by_extension.find(ext) == demix_functions_by_extension.end();
 	if (is_extension_invalid) {
-		cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: ";
+		std::cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: ";
 		for (auto const& [key, val] : demix_functions_by_extension) {
-			cerr << key << " ";
+			std::cerr << key << " ";
 		}
-		cerr << "\n";
+		std::cerr << "\n";
 		exit(1);
 	}
-
-	return ext;
 }
 
 Settings create_settings_from_args(int argc, char* argv[])
@@ -374,6 +378,7 @@ Settings create_settings_from_args(int argc, char* argv[])
 	}
 
 	settings.image_extension = get_extension(settings.image_path);
+	exit_if_invalid_extension(settings.image_extension);
 
 	return settings;
 }

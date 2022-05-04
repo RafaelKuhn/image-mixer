@@ -6,59 +6,6 @@
 #include "jpeg-wrapper.h"
 
 
-void write_as_jpeg(const char* const filename, const ImageData &data, int j_ql, int ch_ss)
-{
-	write_as_jpeg(filename, data.colors, data.get_width(), data.get_height(), j_ql, ch_ss);
-}
-
-void write_as_jpeg(const char* const filename, const Color *data, uint w, uint h, int j_ql, int ch_ss)
-{
-	tjhandle jpeg_handle = tjInitCompress();
-
-	if (jpeg_handle == NULL) {
-		std::cerr << "TJ Error: " << tjGetErrorStr() << " UNABLE TO INIT TJ Compressor Object\n";
-		return;
-	}
-
-	// TODO: greyscale jpeg support
-	// int pixelFormat = TJPF_GRAY;
-	// int ch_ss = TJSAMP_GRAY;
-	// int color_channel_amount = 1;
-	
-	int color_channel_amount = 3;
-	int pixel_format = TJPF_RGB;
-
-	auto input_image_buffer_ptr = std::make_unique<unsigned char[]>(w * h * color_channel_amount);
-	for (uint y = 0; y < h; y++) {
-		for (uint x = 0; x < w; x++) {
-			int index = y * w + x;
-
-			input_image_buffer_ptr[index * color_channel_amount + 0] = data[index].r;
-			input_image_buffer_ptr[index * color_channel_amount + 1] = data[index].g;
-			input_image_buffer_ptr[index * color_channel_amount + 2] = data[index].b;
-		}
-	}
-	
-	unsigned long jpeg_size = 0;
-	unsigned char* compressed_jpeg_buffer = NULL;
-	int tj_stat = tjCompress2(jpeg_handle, input_image_buffer_ptr.get(), w, 0, h, pixel_format, &compressed_jpeg_buffer, &jpeg_size, ch_ss, j_ql, 0);
-	if (tj_stat != 0) {
-		std::cerr << "TurboJPEG Error: " << tjGetErrorStr() << " UNABLE TO COMPRESS JPEG IMAGE\n";
-		tjDestroy(jpeg_handle);
-		return;
-	}
-
-	std::ofstream file(filename, std::ios_base::binary);
-	if (!file) {
-		std::cerr << "[os error] could not open file: " << std::strerror(errno) << "\n";
-		return;
-	}
-
-	file.write(reinterpret_cast<const char*>(compressed_jpeg_buffer), jpeg_size);
-	
-	tjDestroy(jpeg_handle);
-}
-
 std::unique_ptr<ImageData> read_as_jpeg(const char* const filename)
 {
 	std::ifstream file(filename, std::ios_base::binary);
@@ -120,4 +67,58 @@ std::unique_ptr<ImageData> read_as_jpeg(const char* const filename)
 	tjDestroy(_jpegDecompressor);
 	
 	return img_data;
+}
+
+
+void write_as_jpeg(const char* const filename, const ImageData &data, int j_ql, int ch_ss)
+{
+	write_as_jpeg(filename, data.colors, data.get_width(), data.get_height(), j_ql, ch_ss);
+}
+
+void write_as_jpeg(const char* const filename, const Color *data, uint w, uint h, int j_ql, int ch_ss)
+{
+	tjhandle jpeg_handle = tjInitCompress();
+
+	if (jpeg_handle == NULL) {
+		std::cerr << "TJ Error: " << tjGetErrorStr() << " UNABLE TO INIT TJ Compressor Object\n";
+		return;
+	}
+
+	// TODO: greyscale jpeg support
+	// int pixelFormat = TJPF_GRAY;
+	// int ch_ss = TJSAMP_GRAY;
+	// int color_channel_amount = 1;
+	
+	int color_channel_amount = 3;
+	int pixel_format = TJPF_RGB;
+
+	auto input_image_buffer_ptr = std::make_unique<unsigned char[]>(w * h * color_channel_amount);
+	for (uint y = 0; y < h; y++) {
+		for (uint x = 0; x < w; x++) {
+			int index = y * w + x;
+
+			input_image_buffer_ptr[index * color_channel_amount + 0] = data[index].r;
+			input_image_buffer_ptr[index * color_channel_amount + 1] = data[index].g;
+			input_image_buffer_ptr[index * color_channel_amount + 2] = data[index].b;
+		}
+	}
+	
+	unsigned long jpeg_size = 0;
+	unsigned char* compressed_jpeg_buffer = NULL;
+	int tj_stat = tjCompress2(jpeg_handle, input_image_buffer_ptr.get(), w, 0, h, pixel_format, &compressed_jpeg_buffer, &jpeg_size, ch_ss, j_ql, 0);
+	if (tj_stat != 0) {
+		std::cerr << "TurboJPEG Error: " << tjGetErrorStr() << " UNABLE TO COMPRESS JPEG IMAGE\n";
+		tjDestroy(jpeg_handle);
+		return;
+	}
+
+	std::ofstream file(filename, std::ios_base::binary);
+	if (!file) {
+		std::cerr << "[os error] could not open file: " << std::strerror(errno) << "\n";
+		return;
+	}
+
+	file.write(reinterpret_cast<const char*>(compressed_jpeg_buffer), jpeg_size);
+	
+	tjDestroy(jpeg_handle);
 }
