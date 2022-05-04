@@ -37,7 +37,7 @@ std::string append_before_extension(const std::string &path, const std::string &
 	return new_path;
 }
 
-void clone_red(const ImageData& base, ImageData& dest)
+void clone_only_red(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
 	int width = base.get_width();
@@ -50,7 +50,7 @@ void clone_red(const ImageData& base, ImageData& dest)
 		}
 	}
 }
-void clone_green(const ImageData& base, ImageData& dest)
+void clone_only_green(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
 	int width = base.get_width();
@@ -63,7 +63,7 @@ void clone_green(const ImageData& base, ImageData& dest)
 		}
 	}
 }
-void clone_blue(const ImageData& base, ImageData& dest)
+void clone_only_blue(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
 	int width = base.get_width();
@@ -77,7 +77,51 @@ void clone_blue(const ImageData& base, ImageData& dest)
 	}
 }
 
+void distribute_red(const ImageData& base, ImageData& dest)
+{
+	int height = base.get_height();
+	int width = base.get_width();
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			int index = y * width + x;
+			int channel = base.colors[index].r;
+			Color col(channel, channel, channel);
 
+			dest.colors[index] = col;
+		}
+	}
+}
+void distribute_green(const ImageData& base, ImageData& dest)
+{
+	int height = base.get_height();
+	int width = base.get_width();
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			int index = y * width + x;
+			int channel = base.colors[index].g;
+			Color col(channel, channel, channel);
+
+			dest.colors[index] = col;
+		}
+	}
+}
+void distribute_blue(const ImageData& base, ImageData& dest)
+{
+	int height = base.get_height();
+	int width = base.get_width();
+	for (int y = 0; y < height; ++y) {
+		for (int x = 0; x < width; ++x) {
+			int index = y * width + x;
+			int channel = base.colors[index].b;
+			Color col(channel, channel, channel);
+
+			dest.colors[index] = col;
+		}
+	}
+}
+
+// TODO: demix function could take 'read function' and 'write function'
+// or polymorphism: class receives a 'read method' and 'write method'
 void demix_png(const Settings &settings)
 {
 	using std::cout;
@@ -88,20 +132,37 @@ void demix_png(const Settings &settings)
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
-	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
-	clone_red(*image_data, *temp_img);
-	write_as_png(red_image_path.data(), *temp_img, settings.has_alpha);
-	cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+	if (settings.color_mode == GREY) {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wr");
+		distribute_red(*image_data, *temp_img);
+		write_as_png(red_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
 
-	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
-	clone_green(*image_data, *temp_img);
-	write_as_png(green_image_path.data(), *temp_img, settings.has_alpha);
-	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wg");
+		distribute_green(*image_data, *temp_img);
+		write_as_png(green_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
 
-	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
-	clone_blue(*image_data, *temp_img);
-	write_as_png(blue_image_path.data(), *temp_img, settings.has_alpha);
-	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wb");
+		distribute_blue(*image_data, *temp_img);
+		write_as_png(blue_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	} else {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+		clone_only_red(*image_data, *temp_img);
+		write_as_png(red_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+		clone_only_green(*image_data, *temp_img);
+		write_as_png(green_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+		clone_only_blue(*image_data, *temp_img);
+		write_as_png(blue_image_path.data(), *temp_img, settings.has_alpha);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	}
 }
 
 void demix_bmp(const Settings &settings)
@@ -114,20 +175,37 @@ void demix_bmp(const Settings &settings)
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
-	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
-	clone_red(*image_data, *temp_img);
-	write_as_bmp(red_image_path.data(), *temp_img);
-	cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+	if (settings.color_mode == GREY) {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wr");
+		distribute_red(*image_data, *temp_img);
+		write_as_bmp(red_image_path.data(), *temp_img);
+		cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
 
-	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
-	clone_green(*image_data, *temp_img);
-	write_as_bmp(green_image_path.data(), *temp_img);
-	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wg");
+		distribute_green(*image_data, *temp_img);
+		write_as_bmp(green_image_path.data(), *temp_img);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
 
-	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
-	clone_blue(*image_data, *temp_img);
-	write_as_bmp(blue_image_path.data(), *temp_img);
-	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wb");
+		distribute_blue(*image_data, *temp_img);
+		write_as_bmp(blue_image_path.data(), *temp_img);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	} else {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+		clone_only_red(*image_data, *temp_img);
+		write_as_bmp(red_image_path.data(), *temp_img);
+		cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
+
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+		clone_only_green(*image_data, *temp_img);
+		write_as_bmp(green_image_path.data(), *temp_img);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+		clone_only_blue(*image_data, *temp_img);
+		write_as_bmp(blue_image_path.data(), *temp_img);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	}
 }
 
 void demix_jpeg(const Settings &settings)
@@ -140,22 +218,38 @@ void demix_jpeg(const Settings &settings)
 	
 	auto temp_img = std::make_unique<ImageData>(image_data->get_width(), image_data->get_height());
 
-	std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
-	clone_red(*image_data, *temp_img);
-	write_as_jpeg(red_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-	cout << "[demix] red saved at   \"" << red_image_path <<  "\"\n";
+	if (settings.color_mode == GREY) {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wr");
+		distribute_red(*image_data, *temp_img);
+		write_as_jpeg(red_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] red saved at \"" << red_image_path <<  "\"\n";
 
-	std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
-	clone_green(*image_data, *temp_img);
-	write_as_jpeg(green_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-	cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wg");
+		distribute_green(*image_data, *temp_img);
+		write_as_jpeg(green_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
 
-	std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
-	clone_blue(*image_data, *temp_img);
-	write_as_jpeg(blue_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
-	cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-wb");
+		distribute_blue(*image_data, *temp_img);
+		write_as_jpeg(blue_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	} else {
+		std::string red_image_path = append_before_extension(settings.image_path, settings.image_extension, "-r");
+		clone_only_red(*image_data, *temp_img);
+		write_as_jpeg(red_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] red saved at   \"" << red_image_path <<  "\"\n";
+
+		std::string green_image_path = append_before_extension(settings.image_path, settings.image_extension, "-g");
+		clone_only_green(*image_data, *temp_img);
+		write_as_jpeg(green_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] green saved at \"" << green_image_path <<  "\"\n";
+
+		std::string blue_image_path = append_before_extension(settings.image_path, settings.image_extension, "-b");
+		clone_only_blue(*image_data, *temp_img);
+		write_as_jpeg(blue_image_path.data(), *temp_img, 80, SUBSAMPLING_420);
+		cout << "[demix] blue saved at  \"" << blue_image_path <<  "\"\n";
+	}
 }
-
 
 std::map<std::string, std::function<void(Settings)>> demix_functions_by_extension = {
 	{ "jpg",  demix_jpeg },
@@ -163,7 +257,6 @@ std::map<std::string, std::function<void(Settings)>> demix_functions_by_extensio
 	{ "png",  demix_png },
 	{ "bmp",  demix_bmp }
 };
-
 
 std::string get_extension(const std::string &path)
 {
@@ -256,6 +349,7 @@ Settings create_settings_from_args(int argc, char* argv[])
 			}
 
 			std::string mode = *(++arg_ptr);
+			
 			if (mode == "grey" || mode == "gray") {
 				settings.color_mode = GREY;
 
