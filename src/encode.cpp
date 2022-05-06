@@ -1,81 +1,24 @@
 #include <iostream>
-
 #include <memory>
 #include <string>
-#include <sstream>
 #include <vector>
 
-#include "bmp.h"
-#include "png-wrapper.h"
-#include "jpeg-wrapper.h"
+#include "image-handler.h"
+#include "path-utils.h"
 
-// TODO: compile only once
-std::string append_before_extension(const std::string &path, const std::string &ext, const char* appended)
-{
-	size_t replace_start = path.length() - ext.length() - 1;
-	size_t ext_size = sizeof(ext);
-	std::string new_path_ending = std::string(appended).append(".").append(ext);
-	
-	std::string new_path = std::string(path).replace(replace_start, ext_size, new_path_ending);
-
-	return new_path;
-}
-
-// TODO: compile only once
-std::string get_extension(const std::string &path)
-{
-	using std::cout;
-	using std::cerr; using std::stringstream; using std::string;
-
-	size_t index_of_last_dot = path.find_last_of('.');
-	if (index_of_last_dot == string::npos) {
-		cerr << "[error] file at path \"" << path << "\" has no extension\n";
-		exit(1);
-	}
-
-	stringstream ss;
-	int path_len = path.length();
-	for (int i = index_of_last_dot+1; i < path_len; ++i) {
-		ss << path[i];
-	}
-
-	string ext = ss.str();
-
-	return ext;
-}
-
-struct Settings {
-	std::string image_path;
-	std::string image_extension;
+struct EncodeSettings {
+	std::string input_path;
+	std::string input_extension;
+	std::string output_path;
 	std::string output_extension;
+	bool remove_alpha;
+	int jpeg_quality;
+	int chroma_subsampling;
 };
 
-bool is_a_valid_extension(const std::string &ext)
+EncodeSettings create_settings_from_args(int argc, char* argv[])
 {
-	return (ext == "jpg" || ext == "jpeg" || ext == "png" || ext == "bmp");
-	// bool is_extension_invalid = demix_functions_by_extension.find(ext) == demix_functions_by_extension.end();
-	// if (is_extension_invalid) {
-	// 	std::cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: ";
-	// 	for (auto const& [key, val] : demix_functions_by_extension) {
-	// 		std::cerr << key << " ";
-	// 	}
-	// 	std::cerr << "\n";
-	// 	exit(1);
-	// }
-}
-
-void exit_if_invalid_extension(const std::string &ext)
-{
-	if (!is_a_valid_extension(ext)) {
-		std::cerr << "[error] invalid extension: " << ext << "\n";
-		exit(1);
-	}
-}
-
-
-Settings create_settings_from_args(int argc, char* argv[])
-{
-	using std::cerr;
+	using std::cout; using std::cerr;
 
 	// creates a vector of string from argv
 	std::vector<std::string> args;
@@ -87,11 +30,15 @@ Settings create_settings_from_args(int argc, char* argv[])
 		exit(1);
 	}
 
-	Settings settings;
+	EncodeSettings settings;
 	// defaults
-	settings.image_path = "";
-	settings.image_extension = "";
+	settings.input_path = "";
+	settings.input_extension = "";
+	settings.output_path = "";
 	settings.output_extension = "";
+	settings.remove_alpha = false;
+	settings.jpeg_quality = 80;
+	settings.chroma_subsampling = 420;
 
 	int non_opt_args_amount = 0;
 	for (auto arg_ptr = args.begin(); arg_ptr != args.end(); ++arg_ptr) {
@@ -100,13 +47,78 @@ Settings create_settings_from_args(int argc, char* argv[])
 		// handle opts (-q, -r, -o)
 		bool is_arg_an_opt = current[0] == '-';
 		if (is_arg_an_opt) {
-			if (current == args.back()) {
-				cerr << "[error] flag " << current << " has no value\n";
+			if (current.length() > 2) {
+				cerr << "[error] opt argument too long!: " << current;
+				cerr << "opt arguments have just one character, like -a or -m!\n";
 				exit(1);
 			}
 
-			++arg_ptr;
-			continue;
+			// args that don't require a value
+			if (current[1] == 'r') {
+				bool is_output_jpeg = settings.output_extension == "jpg" || settings.output_extension == "jpeg";
+				if (is_output_jpeg) {
+					cerr << "[error] can't remove alpha from jpeg, jpegs don't have alpha!\n";
+					exit(1);
+				}
+				settings.remove_alpha = true;
+				continue;
+			}
+
+			// args that require a value
+			if (current[1] == 'o') {
+				if (current == args.back()) {
+					cerr << "[error] flag " << current << " requires a value\n";
+					exit(1);
+				}
+				std::string arg_after_current = *(++arg_ptr);
+				settings.output_path = arg_after_current;
+				continue;
+			}
+
+			bool is_output_png_or_bmp = settings.output_extension == "png" || settings.output_extension == "bmp";
+			if (current[1] == 'q') {
+				if (is_output_png_or_bmp) {
+					cerr << "[error] can't change quality of pngs or bmps, jpeg only option!\n";
+					exit(1);
+				}
+				if (current == args.back()) {
+					cerr << "[error] flag " << current << " requires a value\n";
+					exit(1);
+				}
+
+				std::string arg_after_current = *(++arg_ptr);
+				int jpeg_quality_from_arg = ensure_parse_int(arg_after_current);
+				if (!is_quality_valid(jpeg_quality_from_arg)) {
+					cerr << "[error] invalid jpeg quality!\n";
+					cerr << "must be a number between 0 and 100\n";
+					exit(1);
+				}
+				
+				settings.jpeg_quality = jpeg_quality_from_arg;
+				continue;
+			}
+
+			if (current[1] == 'c') {
+				if (is_output_png_or_bmp) {
+					cerr << "[error] can't change chrominance subsampling of pngs or bmps, jpeg only option!\n";
+					exit(1);
+				}
+				if (current == args.back()) {
+					cerr << "[error] flag " << current << " requires a value\n";
+					exit(1);
+				}
+				
+				std::string arg_after_current = *(++arg_ptr);
+				int chroma_subs_from_arg = ensure_parse_int(arg_after_current);
+				if (!is_chroma_subsampling_representation_valid(chroma_subs_from_arg)) {
+					cerr << "[error] invalid chrominance subsampling!\n";
+					cerr << "options are: 444, 422, 420 & 411\n";
+					exit(1);
+				}
+
+				settings.chroma_subsampling = chroma_subs_from_arg;
+				continue;
+			}
 		}
 
 		// handle non-opts
@@ -116,129 +128,85 @@ Settings create_settings_from_args(int argc, char* argv[])
 			exit(1);
 		}
 
-		// check if arg is just a "jpeg", "png", bmp...
-		if (is_a_valid_extension(current)) {
+		// check if that arg is just a "jpeg", "png", bmp...
+		if (is_extension_valid(current)) {
 			settings.output_extension = current;
 			continue;
 		}
 
-		settings.image_path = current;
-
+		settings.input_path = current;
 	}
 
-	if (settings.image_path == "") {
+	if (settings.input_path == "") {
 		cerr << "[error] path not found \n";
 		exit(1);
 	}
-
-	settings.image_extension = get_extension(settings.image_path);
-	exit_if_invalid_extension(settings.image_extension);
-
-	if (settings.output_extension == "") {
-		std::cout << "[encode] output format deduced to be same as input, " << settings.image_extension << "\n";
-		settings.output_extension = settings.image_extension;
+	
+	settings.input_extension = get_extension(settings.input_path);
+	if (!is_extension_valid(settings.input_extension)) {
+		std::cerr << "[error] invalid extension: " << settings.input_extension << "\n";
+		exit(1);
 	}
+
+	// change "jpegs" to "jpgs"
+	bool is_input_jpeg_with_e = settings.input_extension == "jpeg";
+	if (is_input_jpeg_with_e) {
+		settings.input_extension = "jpg";
+	}
+	bool is_output_jpeg_with_e = settings.output_extension == "jpeg";
+	if (is_output_jpeg_with_e) {
+		settings.output_extension = "jpg";
+	}
+
+	bool output_path_not_informed = settings.output_path == "";
+	bool output_ext_not_informed = settings.output_extension == "";
+	if (output_path_not_informed && output_ext_not_informed) {
+		settings.output_path = std::string("output.").append(settings.input_extension);
+		settings.output_extension = settings.input_extension;
+		std::cout << "[encode] neither output path nor format informed, saving to \"" << settings.output_path << "\"\n";
+	}
+	else if (output_path_not_informed) {
+		settings.output_path = replace_extension(settings.input_path, settings.output_extension);
+		std::cout << "[encode] output file name deduced to be same as input, with specified extension: \"" << settings.output_path << "\"\n";
+	}
+
+	// if input is a jpeg, output doesn't need to have alpha
+	bool is_input_jpeg = settings.input_extension == "jpg" || settings.input_extension == "jpeg";
+	if (is_input_jpeg) {
+		settings.remove_alpha = true;
+	}
+
+	if (settings.output_path == settings.input_path) {
+		settings.output_path = std::string("output.").append(settings.input_extension);
+		settings.output_extension = settings.input_extension;
+		std::cout << "[encode] input and output path can't be same, output path will be " << settings.output_path << "\n";
+	}
+
+#ifdef DEBUG_MODE
+	cout << "\napp settings: ";
+	cout << "\ninput path "  << settings.input_path;
+	cout << "\ninput ext "  << settings.input_extension;
+	cout << "\noutput path "  << settings.output_path;
+	cout << "\noutput ext "  << settings.output_extension;
+	cout << "\njpeg q "  << settings.jpeg_quality;
+	cout << "\nch_ss "  << settings.chroma_subsampling;
+	cout << "\nremove a "  << settings.remove_alpha << "\n\n";
+#endif
 
 	return settings;
-}
-
-// TODO: make this shared across files, image-reader.cpp and image-writer.cpp
-// read-settings, write-settings
-class GenericReader {
-public:
-	virtual std::unique_ptr<ImageData> read(const Settings &settings) = 0;
-};
-class JPEGReader : public GenericReader {
-public:
-	std::unique_ptr<ImageData> read(const Settings &settings) {
-		std::cout << "reading as jpeg \n";
-		return nullptr;
-	}
-};
-class PNGReader : public GenericReader {
-public:
-	std::unique_ptr<ImageData> read(const Settings &settings) {
-		std::cout << "reading as png \n";
-		return nullptr;
-	}
-};
-class BMPReader : public GenericReader {
-public:
-	std::unique_ptr<ImageData> read(const Settings &settings) {
-		std::cout << "reading as bmp \n";
-		return nullptr;
-	}
-};
-
-std::unique_ptr<GenericReader> get_read_method(const Settings &settings)
-{
-	if (settings.image_extension == "jpeg" || settings.image_extension == "jpg") {
-		return std::make_unique<JPEGReader>();
-	}
-
-	if (settings.image_extension == "png") {
-		return std::make_unique<PNGReader>();
-	}
-
-	if (settings.image_extension == "bmp") {
-		return std::make_unique<BMPReader>();
-	}
-
-	exit(1);
-}
-
-class GenericWriter {
-public:
-	virtual std::unique_ptr<ImageData> write(const Settings &settings) = 0;
-};
-class JPEGWriter : public GenericWriter {
-public:
-	std::unique_ptr<ImageData> write(const Settings &settings) {
-		std::cout << "writing as jpeg \n";
-		return nullptr;
-	}
-};
-class PNGWriter : public GenericWriter {
-public:
-	std::unique_ptr<ImageData> write(const Settings &settings) {
-		std::cout << "writing as png \n";
-		return nullptr;
-	}
-};
-class BMPWriter : public GenericWriter {
-public:
-	std::unique_ptr<ImageData> write(const Settings &settings) {
-		std::cout << "writing as bmp \n";
-		return nullptr;
-	}
-};
-
-std::unique_ptr<GenericWriter> get_write_method(const Settings &settings)
-{
-	if (settings.output_extension == "jpeg" || settings.output_extension == "jpg") {
-		return std::make_unique<JPEGWriter>();
-	}
-
-	if (settings.output_extension == "png") {
-		return std::make_unique<PNGWriter>();
-	}
-
-	if (settings.output_extension == "bmp") {
-		return std::make_unique<BMPWriter>();
-	}
-
-	exit(1);
 }
 
 
 int main(int argc, char* argv[])
 {
-	Settings settings = create_settings_from_args(argc, argv);
+	EncodeSettings settings = create_settings_from_args(argc, argv);
 
-	std::unique_ptr<GenericReader> read_method = get_read_method(settings);
-	auto img_data = read_method->read(settings);
+	read_function read_image = get_read_function(settings.input_extension);
+	std::unique_ptr<ImageData> img_data = read_image(settings.input_path.data());
+	exit_if_nullptr(img_data);
 
-	std::unique_ptr<GenericWriter> write_method = get_write_method(settings);
-	write_method->write(settings);	
+	WriteSettings write_settings = WriteSettings(settings.output_path, !settings.remove_alpha, settings.jpeg_quality, settings.chroma_subsampling);
 
+	write_function write_image = get_write_function(settings.output_extension);
+	write_image(write_settings, *img_data);
 }

@@ -30,6 +30,7 @@ $(shell [ -d $(OBJ_DIR) ] || mkdir $(OBJ_DIR) )
 all: demix mix encode
 debug: demix-debug mix-debug encode-debug
 
+# TODO: make install that depends on all
 
 # compile demix program
 demix: $(DEPS_OK_FILE) $(OBJS) $(BMPLIB) src/demix.cpp
@@ -82,6 +83,8 @@ $(DEPS_OK_FILE): scripts/check-dependencies.sh
 
 clean:
 	@make clean -C src/lib/bmp-lib/
+	@rm -f $(BMPLIB)
+	@rm -f $(BMPLIB_DEBUG)
 	@rm -f $(OBJ_DIR)/*
 	@rm -f demix*
 	@rm -f mix*

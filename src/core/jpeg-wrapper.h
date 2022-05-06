@@ -1,18 +1,18 @@
+#pragma once
+
 #include <memory>
 
 #include "turbojpeg.h" // TJSAMPS
-#include "types.h" // Color, Point, ImageData
+#include "types.h"     // Color, Point, ImageData
 
-/** 8 -> 8  */
-#define SUBSAMPLING_444  TJSAMP_444
-/** 8 -> 2,2 / 2,2  */
-#define SUBSAMPLING_422  TJSAMP_422
-/** 8 -> 4 , 4  */
-#define SUBSAMPLING_420  TJSAMP_420
-/** 8 -> 4 / 4 (unoptimized by library) */
-#define SUBSAMPLING_411  TJSAMP_411
-/** 0 */
-#define SUBSAMPLING_GRAY TJSAMP_GRAY
+enum CHROMINANCE_SUBSAMPLING {
+	SUBSAMPLING_444 = TJSAMP_444,
+	SUBSAMPLING_422 = TJSAMP_422,
+	SUBSAMPLING_420 = TJSAMP_420,
+	SUBSAMPLING_411 = TJSAMP_411, // (unoptimized by library)
+	SUBSAMPLING_GRAY = TJSAMP_GRAY
+	/** 0 */
+};
 
 /**
  * @param jpeg_quality jpeg_quality goes from 0 (worst) to 100 (best)

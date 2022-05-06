@@ -19,7 +19,6 @@ std::unique_ptr<ImageData> read_as_jpeg(const char* const filename)
 	
 	file.seekg(0, file.beg);
 
- 	//TODO: make unique
 	// unsigned char* compressed_image_data = new unsigned char[file_size];
 	auto compressed_image_data_ptr = std::make_unique<unsigned char[]>(file_size);
 	file.read((char*)compressed_image_data_ptr.get(), file_size);
@@ -80,9 +79,14 @@ void write_as_jpeg(const char* const filename, const Color *data, uint w, uint h
 	tjhandle jpeg_handle = tjInitCompress();
 
 	if (jpeg_handle == NULL) {
-		std::cerr << "TJ Error: " << tjGetErrorStr() << " UNABLE TO INIT TJ Compressor Object\n";
+		std::cerr << "TurboJPEG Error:: " << tjGetErrorStr() << " UNABLE TO INIT TJ Compressor Object\n";
 		return;
 	}
+
+	if (j_ql < 0 && j_ql > 100) {
+		std::cerr << "TurboJPEG Error:: jpeg quality out of bounds!\n";
+		return;
+	}	
 
 	// TODO: greyscale jpeg support
 	// int pixelFormat = TJPF_GRAY;
@@ -114,7 +118,7 @@ void write_as_jpeg(const char* const filename, const Color *data, uint w, uint h
 
 	std::ofstream file(filename, std::ios_base::binary);
 	if (!file) {
-		std::cerr << "[os error] could not open file: " << std::strerror(errno) << "\n";
+		std::cerr << "[os error] could not open file: \"" << filename << "\", " << std::strerror(errno) << "\n";
 		return;
 	}
 
