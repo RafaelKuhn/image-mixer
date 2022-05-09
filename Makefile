@@ -80,6 +80,12 @@ $(OBJ_DIR)/%.d.o: $(SRC_DIR)/%.cpp
 $(DEPS_OK_FILE): scripts/check-dependencies.sh
 	@./scripts/check-dependencies.sh $(DEPS_OK_FILE)
 
+install: all
+	@./scripts/install.sh mix demix encode
+
+uninstall:
+	@./scripts/uninstall.sh mix demix encode
+
 
 clean:
 	@make clean -C src/lib/bmp-lib/
