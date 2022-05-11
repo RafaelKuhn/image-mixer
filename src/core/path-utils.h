@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 
-std::pair<std::string, std::string> split_path_in_last_dot(const std::string &path);
+std::pair<std::string, std::string> split_path_in_last_dot_or_exit(const std::string &path);
 
 std::string get_extension(const std::string &path);
 std::string get_path_without_extension(const std::string &path);

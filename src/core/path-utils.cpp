@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-std::pair<std::string, std::string> split_path_in_last_dot(const std::string &path)
+std::pair<std::string, std::string> split_path_in_last_dot_or_exit(const std::string &path)
 {
 	using std::cerr; using std::stringstream; using std::string;
 
@@ -39,13 +39,13 @@ std::pair<std::string, std::string> split_path_in_last_dot(const std::string &pa
 // TODO: check if compiles with const& structured binding
 std::string get_extension(const std::string &path)
 {
-	auto [_, extension] = split_path_in_last_dot(path);
+	auto [_, extension] = split_path_in_last_dot_or_exit(path);
 	return extension;
 }
 
 std::string get_path_without_extension(const std::string &path)
 {
-	auto [path_wo_ext, _] = split_path_in_last_dot(path);
+	auto [path_wo_ext, _] = split_path_in_last_dot_or_exit(path);
 	return path_wo_ext;
 }
 
@@ -60,7 +60,7 @@ std::string replace_extension(const std::string &path, const std::string &new_ex
 
 std::string append_before_extension(const std::string &path, const char* appended)
 {
-	auto [path_wo_extension, ext] = split_path_in_last_dot(path);
+	auto [path_wo_extension, ext] = split_path_in_last_dot_or_exit(path);
 
 	size_t replace_start = path_wo_extension.length();
 	size_t replace_end = ext.length() + 1;

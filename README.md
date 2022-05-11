@@ -12,8 +12,8 @@ Segregates an image into three others, comprising of the image's three color cha
 (can also be work with alpha)  
 
 - **Examples**  
-	- `$ ./demix "img.png"` will create files `img-r.png`, `img-g.png`, and `img-b.png`  
-	- `$ ./demix -a img.png` will create files `img-r.png`, `img-g.png`, `img-b.png`, and `img-a.png`  
+	- `$ demix "img.png"` will create files `img-r.png`, `img-g.png`, and `img-b.png`  
+	- `$ demix -a img.png` will create files `img-r.png`, `img-g.png`, `img-b.png`, and `img-a.png`  
 
 - **Input**
 	- Path to the file to be demixed
@@ -39,45 +39,47 @@ Creates an image comprised of three others, taking the red, green, and blue chan
 (can also work with alpha)  
 
 - **Examples**  
-	- `$ ./mix "r.png" "g.png" "blue.png"` will create the file `output.png` using the images' red, green, and blue channels as color channels in the output image  
-	- `$ ./mix -o "what-have-i-done.bmp" "r.jpg" "g.bmp" "b.png" "stencil.png"` will create the file "what-have-i-done.bmp" (already encoded as BMP) using the images' red, green, blue, and alpha channels as color channels in the output image  
+	- `$ mix "r.png" "g.png" "blue.png"` will create the file `output.png` using the images' red, green, and blue channels as color channels in the output image  
+	- `$ mix -o "what-have-i-done.bmp" "r.jpg" "g.bmp" "b.png" "stencil.png"` will create the file "what-have-i-done.bmp" (already encoded as BMP) using the images' red, green, blue, and alpha channels as color channels in the output image  
 
 - **Input**
 	- Path to the files to be mixed, respectively R, G, B and A  
 
-- **Default Behavior**  
-	- if one of the inputs is "_", that channel will be skipped  
-	example: `$ ./mix img.png _ img.png` will create an image with only the red and blue channels, filling green with zeros
-	- if no output is informed, the default image will be a `PNG` named `output.png`
-	- if 4 images are specified, will apply -a option and use the fourth image's alpha in the output
-	- if more than 4 images are specified, the program will encrypt all your files  
-	(just kidding, it will throw an error)  
-
 - **Options / Flags**  
-	- `-a`: use alpha channel  
-	includes an alpha channel at the resulting image (if fourth input image is not specified, fills it with "FF").
-	- `-o`: overrides output file name and format, encodes the output using the new filename's extension  
-	example: `-o "new-file-name.jpg"`, will generate a `jpeg` image (already with the `jpeg` encoding and extension), the extension must be supported  
-	(check header of this)  
+	- `-o`: output file name and format, encodes the output using the new filename's extension  
+	example:  
+	`$ mix -o "new-file-name.jpg"` will generate a `jpeg` image (already with the correct encoding and extension)  
+	the extension must be supported (check header of this)  
 	- `-h`: print help
+
+- **Default Behavior**  
+	- if one of the inputs is or starts with "_", that channel will be skipped (filled with zeros)  
+	example:  
+	`$ mix img.png _ img.png` will create an image with only the img's red and blue channels, filling green with zeros
+	- if no output is informed, the default image will be a `PNG` named `output.png`
+	- if 4 images are specified, will use the fourth image's alpha in the output image  
+	when less than 4 images are specified, output image doesn't need to have an alpha channel at all
+	- if more than 4 images are specified, the program will encrypt all your files and corrupt your operating system  
+	(just kidding, it will throw an error)  
+	- in `jpeg` outputs, quality will be `100` and chrominance subsampling `4:4:4` (can be changed with encode program)
 
 - **Notes**
 	- The dimensions of the remaning image are the biggest width and height among the specified images  
 	- Default output image is named "output.png", name and format (extension) can be overriden with `-o` argument  
 
 ## ENCODE PROGRAM
-This just changes the image format into another (can be used to remove alpha channels or change internal image encoding)  
+This just changes the image format into another (can be used to remove alpha channels or mess with jpeg settings)  
 
 - **Examples**  
-	- `$ ./encode jpeg "img.png"` will create file "img.jpg"  
+	- `$ encode jpeg "img.png"` will create file "img.jpg"  
 	changing input image's format to `jpeg`
-	- `$ ./encode -a "img.png"` will create file "img.jpg"  
+	- `$ encode -a "img.png"` will create file "img.jpg"  
 	changing input image's format to `jpeg`
-	- `$ ./encode -q 80 img.jpg` will create file "output.jpg"  
+	- `$ encode -q 80 img.jpg` will create file "output.jpg"  
 	-q option is used to reduce jpeg quality (0 to 100)
-	- `$ ./encode -r img.png` will create file "output.png"  
+	- `$ encode -r img.png` will create file "output.png"  
 	-r option is used to remove the alpha channel from pngs and bmps, turning a 32bpp image into a 24bpp one
-	- `$ ./encode bmp "cool-photo.jpg" -o "legacy-photo.bmp"` will create file "legacy-photo.bmp"
+	- `$ encode bmp "cool-photo.jpg" -o "legacy-photo.bmp"` will create file "legacy-photo.bmp"
 
 - **Input**
 	- Output format, example: "jpeg", "png", "bmp"
@@ -112,7 +114,7 @@ also depends on a small bmp lib, included as a submodule (homemade)
 ## BUILD
 This is built using Make and G++  
 First download the dependencies with the appropriate package manager  
-For an example, in Mingw-w64 under MSYS2, run:  
+> For an example, in Mingw-w64 under MSYS2, run:  
 `$ pacman -S mingw64/mingw-w64-x86_64-libpng`  
 `$ pacman -S mingw64/mingw-w64-x86_64-libjpeg-turbo`  
 `$ pacman -S msys/libzstd`  
@@ -132,13 +134,15 @@ Will delete the stuff from there
 
 
 ## POSSIBLE TODOS:
+> not that they will ever be done
+- alpha handling in programs for supported formats
 - new program: messer, messes with the image (lol)  
-used to crop, reescale and rotate images  
+could be used to crop, reescale, rotate, warp and shit    
+- help `-h` option in programs (until then, only me, this readme, can help you ;-)
 - file support
 	- webp images (.webp)
 	- pnm images (.pbm, .pgm, .ppm, and .pam) (checking if it's worth it)
 	- encode output as grayscale (actual 8bit grayscale, not grey representation)
-- alpha handling in programs for supported formats
 
 
 ## PS

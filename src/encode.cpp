@@ -6,6 +6,7 @@
 #include "image-handler.h"
 #include "path-utils.h"
 
+
 struct EncodeSettings {
 	std::string input_path;
 	std::string input_extension;
@@ -49,12 +50,13 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 		if (is_arg_an_opt) {
 			if (current.length() > 2) {
 				cerr << "[error] opt argument too long!: " << current;
-				cerr << "opt arguments have just one character, like -a or -m!\n";
+				cerr << "in this program, opt args have just one character, like -a or -m!\n";
 				exit(1);
 			}
 
+			char opt_char = current[1];
 			// args that don't require a value
-			if (current[1] == 'r') {
+			if (opt_char == 'r') {
 				bool is_output_jpeg = settings.output_extension == "jpg" || settings.output_extension == "jpeg";
 				if (is_output_jpeg) {
 					cerr << "[error] can't remove alpha from jpeg, jpegs don't have alpha!\n";
@@ -65,7 +67,7 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 			}
 
 			// args that require a value
-			if (current[1] == 'o') {
+			if (opt_char == 'o') {
 				if (current == args.back()) {
 					cerr << "[error] flag " << current << " requires a value\n";
 					exit(1);
@@ -76,7 +78,7 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 			}
 
 			bool is_output_png_or_bmp = settings.output_extension == "png" || settings.output_extension == "bmp";
-			if (current[1] == 'q') {
+			if (opt_char == 'q') {
 				if (is_output_png_or_bmp) {
 					cerr << "[error] can't change quality of pngs or bmps, jpeg only option!\n";
 					exit(1);
@@ -98,7 +100,7 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 				continue;
 			}
 
-			if (current[1] == 'c') {
+			if (opt_char == 'c') {
 				if (is_output_png_or_bmp) {
 					cerr << "[error] can't change chrominance subsampling of pngs or bmps, jpeg only option!\n";
 					exit(1);
@@ -119,6 +121,9 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 				settings.chroma_subsampling = chroma_subs_from_arg;
 				continue;
 			}
+
+			cerr << "[error] optional argument \"" << opt_char << "\" not found!\n";
+			exit(1);
 		}
 
 		// handle non-opts
@@ -162,7 +167,7 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 	}
 	else if (output_format_not_informed) {
 		settings.output_extension = get_extension(settings.output_path);
-		std::cout << "[encode] output format deduced to be the extension of \"-o\": , saving to \"" << settings.output_path << "\"\n";
+		std::cout << "[encode] output format deduced to be the extension of \"-o\", saving to \"" << settings.output_path << "\"\n";
 	}
 
 	// if input is a jpeg, output doesn't need to have alpha
@@ -177,15 +182,9 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 		std::cout << "[encode] input and output path can't be same, output path will be " << settings.output_path << "\n";
 	}
 
-	// change any "jpeg" to a "jpg", because 4 letter extensions are fucking ugly
-	bool is_input_jpeg_with_e = settings.input_extension == "jpeg";
-	if (is_input_jpeg_with_e) {
-		settings.input_extension = "jpg";
-	}
-	bool is_output_jpeg_with_e = settings.output_extension == "jpeg";
-	if (is_output_jpeg_with_e) {
-		settings.output_extension = "jpg";
-	}
+	// change any extension "jpeg" to a "jpg", because 4 letter extensions are fucking ugly
+	settings.input_extension  = change_to_jpg_if_jpeg(settings.input_extension);
+	settings.output_extension = change_to_jpg_if_jpeg(settings.output_extension);
 
 #ifdef DEBUG_MODE
 	cout << "\napp settings: ";
