@@ -127,7 +127,7 @@ bool is_quality_valid(const int &quality)
 	return is_valid;
 }
 
-bool is_extension_valid(const std::string &ext)
+bool is_a_valid_extension(const std::string &ext)
 {
 	return (ext == "jpg" || ext == "jpeg" || ext == "png" || ext == "bmp");
 }

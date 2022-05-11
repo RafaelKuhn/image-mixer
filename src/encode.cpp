@@ -129,13 +129,14 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 		}
 
 		// check if that arg is just a "jpeg", "png", bmp...
-		if (is_extension_valid(current)) {
+		if (is_a_valid_extension(current)) {
 			settings.output_extension = current;
 			continue;
 		}
 
 		settings.input_path = current;
 	}
+	// end of for loop over all args
 
 	if (settings.input_path == "") {
 		cerr << "[error] path not found \n";
@@ -143,24 +144,14 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 	}
 	
 	settings.input_extension = get_extension(settings.input_path);
-	if (!is_extension_valid(settings.input_extension)) {
+	if (!is_a_valid_extension(settings.input_extension)) {
 		std::cerr << "[error] invalid extension: " << settings.input_extension << "\n";
 		exit(1);
 	}
 
-	// change "jpegs" to "jpgs"
-	bool is_input_jpeg_with_e = settings.input_extension == "jpeg";
-	if (is_input_jpeg_with_e) {
-		settings.input_extension = "jpg";
-	}
-	bool is_output_jpeg_with_e = settings.output_extension == "jpeg";
-	if (is_output_jpeg_with_e) {
-		settings.output_extension = "jpg";
-	}
-
 	bool output_path_not_informed = settings.output_path == "";
-	bool output_ext_not_informed = settings.output_extension == "";
-	if (output_path_not_informed && output_ext_not_informed) {
+	bool output_format_not_informed = settings.output_extension == "";
+	if (output_path_not_informed && output_format_not_informed) {
 		settings.output_path = std::string("output.").append(settings.input_extension);
 		settings.output_extension = settings.input_extension;
 		std::cout << "[encode] neither output path nor format informed, saving to \"" << settings.output_path << "\"\n";
@@ -169,17 +160,31 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 		settings.output_path = replace_extension(settings.input_path, settings.output_extension);
 		std::cout << "[encode] output file name deduced to be same as input, with specified extension: \"" << settings.output_path << "\"\n";
 	}
+	else if (output_format_not_informed) {
+		settings.output_extension = get_extension(settings.output_path);
+		std::cout << "[encode] output format deduced to be the extension of \"-o\": , saving to \"" << settings.output_path << "\"\n";
+	}
 
 	// if input is a jpeg, output doesn't need to have alpha
 	bool is_input_jpeg = settings.input_extension == "jpg" || settings.input_extension == "jpeg";
 	if (is_input_jpeg) {
 		settings.remove_alpha = true;
 	}
-
+	// if input and output path are the same, change output to "output.smth" to prevent overriding an image
 	if (settings.output_path == settings.input_path) {
 		settings.output_path = std::string("output.").append(settings.input_extension);
 		settings.output_extension = settings.input_extension;
 		std::cout << "[encode] input and output path can't be same, output path will be " << settings.output_path << "\n";
+	}
+
+	// change any "jpeg" to a "jpg", because 4 letter extensions are fucking ugly
+	bool is_input_jpeg_with_e = settings.input_extension == "jpeg";
+	if (is_input_jpeg_with_e) {
+		settings.input_extension = "jpg";
+	}
+	bool is_output_jpeg_with_e = settings.output_extension == "jpeg";
+	if (is_output_jpeg_with_e) {
+		settings.output_extension = "jpg";
 	}
 
 #ifdef DEBUG_MODE
@@ -208,5 +213,6 @@ int main(int argc, char* argv[])
 	WriteSettings write_settings = WriteSettings(settings.output_path, !settings.remove_alpha, settings.jpeg_quality, settings.chroma_subsampling);
 
 	write_function write_image = get_write_function(settings.output_extension);
+	std::cout << "[encode] writing to \"" << write_settings.file_name << "\"\n";
 	write_image(write_settings, *img_data);
 }

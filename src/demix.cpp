@@ -103,7 +103,7 @@ void distribute_blue(const ImageData& base, ImageData& dest)
 
 void exit_if_invalid_extension(const std::string &ext)
 {
-	bool is_ext_invalid = is_extension_valid(ext) == false;
+	bool is_ext_invalid = is_a_valid_extension(ext) == false;
 	if (is_ext_invalid) {
 		std::cerr << "[error] invalid extension: \"" << ext << "\"\nvalid extensions are: png, jpg & bmp\n";
 		exit(1);
@@ -145,47 +145,30 @@ DemixSettings create_settings_from_args(int argc, char* argv[])
 			continue;
 		}
 
-		if (current.size() > 2) {
-			cerr << "[error] opt argument too long!: " << current;
-			cerr << "opt arguments have just one character, like -a or -m!\n";
+		int current_opt_arg_size = current.size();
+		if (current_opt_arg_size == 1) {
+			cerr << "[error] slash without opt argument!: \n";
+			// cerr << "opt arguments have just one character, like -a or -m!\n";
 			exit(1);
 		}
 
-		char opt_char = current[1];
-
-		// check for -a
-		if (opt_char == 'a') {
-			settings.has_alpha = true;
-			continue;
-		}
-		
-		// check for -m (if found, uses next iteration as value for -m)
-		if (opt_char == 'm') {
-			// check if -m is the last argument
-			if (current == args.back()) {
-				cerr << "[error] mode not specified!\n";
-				cerr << "try \"-m rgb\" or \"-m grey\" \n";
-				exit(1);
+		for (int i = 1; i < current_opt_arg_size; ++i) {
+			char opt_char = current[i];
+			// check for -a flag
+			if (opt_char == 'a') {
+				settings.has_alpha = true;
+				continue;
 			}
-
-			std::string mode = *(++arg_ptr);
 			
-			if (mode == "grey" || mode == "gray") {
+			// check for -g flag
+			if (opt_char == 'g') {
 				settings.color_mode = GREY;
-
-			} else if (mode == "rgb") {
-				settings.color_mode = RGB;
-
-			} else {
-				cerr << "[error] specified mode not found: " << mode;
-				cerr << "\nmodes are \"rgb\" and \"grey\"\n";
-				exit(1);
+				continue;
 			}
-			continue;
-		}
 
-		cerr << "[error] optional argument \"" << current << "\" not found!\n";
-		exit(1);
+			cerr << "[error] optional argument \"" << opt_char << "\" not found!\n";
+			exit(1);
+		}		
 	}
 
 	if (non_opt_args_amount == 0) {
@@ -218,38 +201,38 @@ int main(int argc, char* argv[])
 	
 	write_function write_image = get_write_function(settings.input_extension);
 	WriteSettings write_settings = WriteSettings();
-	
+
 	auto temp_img_ptr = std::make_unique<ImageData>(image_data_ptr->get_width(), image_data_ptr->get_height());
 	
 	if (settings.color_mode == GREY) {
 		write_settings.file_name = append_before_extension(settings.input_path, "-wr");
-		std::cout << "writing red to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing red to \"" << write_settings.file_name << "\"\n";
 		distribute_red(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 
 		write_settings.file_name = append_before_extension(settings.input_path, "-wg");
-		std::cout << "writing green to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing green to \"" << write_settings.file_name << "\"\n";
 		distribute_green(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 
 		write_settings.file_name = append_before_extension(settings.input_path, "-wb");
-		std::cout << "writing blue to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing blue to \"" << write_settings.file_name << "\"\n";
 		distribute_blue(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 	}
 	else {
 		write_settings.file_name = append_before_extension(settings.input_path, "-r");
-		std::cout << "writing red to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing red to \"" << write_settings.file_name << "\"\n";
 		clone_only_red(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 
 		write_settings.file_name = append_before_extension(settings.input_path, "-g");
-		std::cout << "writing green to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing green to \"" << write_settings.file_name << "\"\n";
 		clone_only_green(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 
 		write_settings.file_name = append_before_extension(settings.input_path, "-b");
-		std::cout << "writing blue to \"" << write_settings.file_name << "\"\n";
+		std::cout << "[demix] writing blue to \"" << write_settings.file_name << "\"\n";
 		clone_only_blue(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
 	}

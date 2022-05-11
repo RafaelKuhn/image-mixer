@@ -45,6 +45,6 @@ constexpr CHROMINANCE_SUBSAMPLING int_representation_to_chroma_ss(int chroma_sub
 bool is_chroma_subsampling_representation_valid(const int &chroma_subsampling_representation);
 bool is_quality_valid(const int &quality);
 
-bool is_extension_valid(const std::string &ext);
+bool is_a_valid_extension(const std::string &ext);
 
 void exit_if_nullptr(std::unique_ptr<ImageData> &ptr);
