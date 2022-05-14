@@ -22,7 +22,6 @@ DemixSettings create_settings_from_args(int argc, char* argv[])
 {
 	using std::cerr; using std::cout;
 
-	// creates a vector of string from argv
 	std::vector<std::string> args;
 	for (int i = 1; i < argc; ++i)
 		args.push_back(std::string(argv[i]));
@@ -61,17 +60,30 @@ DemixSettings create_settings_from_args(int argc, char* argv[])
 
 		for (int i = 1; i < current_opt_arg_size; ++i) {
 			char opt_char = current[i];
-			// check for -a flag
+			// check for 1 char flags
+			
+			if (opt_char == 'h') {
+				// TODO: implement help and remove this
+				std::cerr << "[dev] help not implemented, only you can help yourself now (read the readme ;-)\n";
+				exit(1);
+				//
+			}
+
 			if (opt_char == 'a') {
+				// TODO: implement alpha and remove these
+				std::cerr << "[dev] alpha support is under development, we don't handle it well yet 8)\n";
+				exit(1);
+				//
 				settings.has_alpha = true;
 				continue;
 			}
 			
-			// check for -g flag
 			if (opt_char == 'g') {
 				settings.color_mode = GREY;
 				continue;
 			}
+
+
 
 			cerr << "[error] optional argument \"" << opt_char << "\" not found!\n";
 			exit(1);

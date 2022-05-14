@@ -29,7 +29,6 @@ MixSettings create_settings_from_args(int argc, char* argv[])
 {
 	using std::cout; using std::cerr;
 
-	// creates a vector of string from argv
 	std::vector<std::string> args;
 	for (int i = 1; i < argc; ++i)
 		args.push_back(std::string(argv[i]));
@@ -55,6 +54,13 @@ MixSettings create_settings_from_args(int argc, char* argv[])
 		if (is_arg_an_opt) {
 			char opt_char = current[1];
 			
+			if (opt_char == 'h') {
+				// TODO: implement help and remove this
+				std::cerr << "[dev] help not implemented, only you can help yourself now (read the readme ;-)\n";
+				exit(1);
+				//
+			}
+
 			if (opt_char == 'o') {
 				if (current == args.back()) {
 					cerr << "[error] -o arg without output path, try -o \"my-output.png\"\n";
@@ -71,7 +77,7 @@ MixSettings create_settings_from_args(int argc, char* argv[])
 			exit(1);
 		}
 
-		// arguments after opts are image paths (for red, green, blue and alpha, respectively)
+		// arguments after opts are image paths (to take red, green, blue and alpha, respectively)
 		paths_amount++;
 
 		bool arg_starts_with_underscore = current[0] == '_';
@@ -116,7 +122,7 @@ MixSettings create_settings_from_args(int argc, char* argv[])
 		}
 		else if (paths_amount == 4) {
 			// TODO: implement alpha and remove these
-			std::cerr << "[error] alpha support is under development, we don't handle it well yet 8)\n";
+			std::cerr << "[dev] alpha support is under development, we don't handle it well yet 8)\n";
 			exit(1);
 			//
 			settings.has_alpha = true;
@@ -315,7 +321,6 @@ int main(int argc, char *argv[])
 	int max_height = get_max_height_of(red_image_data_ptr.get(), green_image_data_ptr.get(), blue_image_data_ptr.get(), alpha_image_data_ptr.get());
 	
 	std::cout << "[mix] creating image with width " << max_width << " and height " << max_height << "\n";
-
 	auto mixed_image = std::make_unique<ImageData>(max_width, max_height);
 	
 	if (red_image_data_ptr) aggregate_red(*red_image_data_ptr, *mixed_image);
@@ -323,5 +328,6 @@ int main(int argc, char *argv[])
 	if (blue_image_data_ptr) aggregate_blue(*blue_image_data_ptr, *mixed_image);
 	// aggregate_alpha(*alpha_image_data_ptr, *mixed_image);
 	
+	std::cout << "[mix] saving to \"" << settings.output_path << "\"\n";
 	write_image(write_settings, *mixed_image);
 }

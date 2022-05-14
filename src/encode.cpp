@@ -53,9 +53,16 @@ EncodeSettings create_settings_from_args(int argc, char* argv[])
 				cerr << "in this program, opt args have just one character, like -a or -m!\n";
 				exit(1);
 			}
-
 			char opt_char = current[1];
+			
 			// args that don't require a value
+			if (opt_char == 'h') {
+				// TODO: implement help and remove this
+				std::cerr << "[dev] help not implemented, only you can help yourself now (read the readme ;-)\n";
+				exit(1);
+				//
+			}
+			
 			if (opt_char == 'r') {
 				bool is_output_jpeg = settings.output_extension == "jpg" || settings.output_extension == "jpeg";
 				if (is_output_jpeg) {
