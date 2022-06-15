@@ -146,4 +146,4 @@ could be used to crop, reescale, rotate, warp and shit
 
 
 ## PS
-this doesn't work on Big-endian IBM mainframes with retarded byte parsing lol
+this doesn't work on Big-endian IBM mainframes
