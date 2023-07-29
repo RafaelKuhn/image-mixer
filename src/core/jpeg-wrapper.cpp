@@ -83,7 +83,7 @@ void write_as_jpeg(const char* const filename, const Color *data, uint w, uint h
 		return;
 	}
 
-	if (j_ql < 0 && j_ql > 100) {
+	if (j_ql < 0 || j_ql > 100) {
 		std::cerr << "TurboJPEG Error:: jpeg quality out of bounds!\n";
 		return;
 	}	

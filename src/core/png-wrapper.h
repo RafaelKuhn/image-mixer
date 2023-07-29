@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "types.h" // Color, Point, ImageData
 
 /**
