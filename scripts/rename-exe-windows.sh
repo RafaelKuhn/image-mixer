@@ -6,8 +6,18 @@
 
 # to stop this, it requires us to do this weird shit this way for some reason
 # poor windows has a hard time dealing with files with no extension 🤔
-[ -f "$1.exe" ] && {
-	echo "copying \"$1.exe\" to \"$1\""
-	mv "$1.exe" "$1"
-	cp "$1" "$1.exe"
+
+! [ -n "$DST_DIR" ] && {
+	echo "cannot rename, DST_DIR not found"
+	exit 1
 }
+
+for arg in $@; do
+	WITH_EXE="$DST_DIR/$arg.exe"
+	WITHOUT_EXE="$DST_DIR/$arg"
+	[ -f "$WITH_EXE" ] && {
+		echo "copying \"$WITH_EXE\" to \"$WITHOUT_EXE\""
+		mv "$WITH_EXE" "$WITHOUT_EXE"
+		cp "$WITHOUT_EXE" "$WITH_EXE"
+	}
+done
