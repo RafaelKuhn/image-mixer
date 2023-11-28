@@ -2,11 +2,11 @@
 
 # set -x
 
-# CC=g++
-CC=clang++
+CC=g++
+# CC=clang++
 
 CPP_FLAGS="-Wall"
-DEBUG_FLAGS="--Wall -Wextra -pedantic -D DEBUG_MODE"
+DEBUG_CPP_FLAGS="-Wall -Wextra -pedantic -D DEBUG_MODE"
 
 SRC_DIR="src/core"
 INC_DIR="include"
@@ -41,13 +41,19 @@ echo "################################################################"
 echo "compiled objects: $OBJS"
 
 # TODO: check status of submodule, clone it, init it, whatever
+
+# TODO if debug mode, build it with -D DEBUG_MODE
 make -C "src/lib/bmp-lib"
 
 # TODO: grab programs from src/ use them to build the other ones, run chmod +x, etc
 
-$CC -o "$DST_DIR"/demix "$CPP_FLAGS" -I "$SRC_DIR" -I "$INC_DIR" "src/demix.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
-$CC -o "$DST_DIR"/mix "$CPP_FLAGS" -I "$SRC_DIR" -I "$INC_DIR" "src/mix.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
-$CC -o "$DST_DIR"/encode "$CPP_FLAGS" -I "$SRC_DIR" -I "$INC_DIR" "src/encode.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
+
+echo "    building demix"
+$CC -o "$DST_DIR"/demix $CPP_FLAGS -I "$SRC_DIR" -I "$INC_DIR" "src/demix.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
+echo "    building mix"
+$CC -o "$DST_DIR"/mix $CPP_FLAGS -I "$SRC_DIR" -I "$INC_DIR" "src/mix.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
+echo "    building encode"
+$CC -o "$DST_DIR"/encode $CPP_FLAGS -I "$SRC_DIR" -I "$INC_DIR" "src/encode.cpp" $OBJS "src/lib/bmp-lib/lib/bmplib.lib" $EXTERNAL_LIBS
 
 export DST_DIR
 ./scripts/install.sh demix mix encode

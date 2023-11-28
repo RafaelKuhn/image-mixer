@@ -103,9 +103,9 @@ DemixSettings create_settings_from_args(int argc, char* argv[])
 
 #ifdef DEBUG_MODE
 	cout << "\napp settings: ";
-	cout << "\ninput path? " << settings.input_path;
-	cout << "\ninput ext? " << settings.input_extension;
-	cout << "\ncolor mode? " << (settings.color_mode == GREY ? "grey" : "rgb");
+	cout << "\ninput path? "    << settings.input_path;
+	cout << "\ninput ext? "     << settings.input_extension;
+	cout << "\ncolor mode? "    << (settings.color_mode == GREY ? "grey" : "rgb");
 	cout << "\ninclude alpha? " << (settings.has_alpha ? "true" : "false");
 	cout << "\n";
 #endif
@@ -184,7 +184,7 @@ void distribute_green(const ImageData& base, ImageData& dest)
 void distribute_blue(const ImageData& base, ImageData& dest)
 {
 	int height = base.get_height();
-	int width = base.get_width();
+	int width  = base.get_width();
 	for (int y = 0; y < height; ++y) {
 		for (int x = 0; x < width; ++x) {
 			int index = y * width + x;
@@ -203,12 +203,12 @@ int main(int argc, char* argv[])
 	read_function read_image = get_read_function(settings.input_extension);
 	auto image_data_ptr = read_image(settings.input_path.data());
 	exit_if_nullptr(image_data_ptr);
-	
+
 	write_function write_image = get_write_function(settings.input_extension);
 	WriteSettings write_settings = WriteSettings();
 
 	auto temp_img_ptr = std::make_unique<ImageData>(image_data_ptr->get_width(), image_data_ptr->get_height());
-	
+
 	if (settings.color_mode == GREY) {
 		write_settings.file_name = append_before_extension(settings.input_path, "-wr");
 		std::cout << "[demix] writing red to \"" << write_settings.file_name << "\"\n";
@@ -224,8 +224,7 @@ int main(int argc, char* argv[])
 		std::cout << "[demix] writing blue to \"" << write_settings.file_name << "\"\n";
 		distribute_blue(*image_data_ptr, *temp_img_ptr);
 		write_image(write_settings, *temp_img_ptr);
-	}
-	else {
+	} else {
 		write_settings.file_name = append_before_extension(settings.input_path, "-r");
 		std::cout << "[demix] writing red to \"" << write_settings.file_name << "\"\n";
 		clone_only_red(*image_data_ptr, *temp_img_ptr);
